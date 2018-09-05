@@ -23,7 +23,7 @@ An example programming a binary to a PIC32.
 
 .. code-block:: text
 
-   > pic32tools -p /dev/arduino flash_write -e -v hello_world.s19
+   > pic32tools --port /dev/arduino flash_write --erase --verify hello_world.s19
    Programmer is alive.
    PIC32 is alive.
    Erasing 0x1fc017c0-0x1fc017dc.
