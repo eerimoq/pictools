@@ -26,7 +26,8 @@ setup(name='pic32tools',
       keywords=['pic32', 'programmer'],
       url='https://github.com/eerimoq/pic32tools',
       install_requires=[
-          'pyserial'
+          'pyserial',
+          'bincopy'
       ],
       entry_points = {
           'console_scripts': ['pic32tools=pic32tools:_main']
