@@ -1,2 +1,4 @@
 bincopy
 pyserial
+tqdm
+bitstruct
