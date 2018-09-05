@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from setuptools import setup
-from setuptools import find_packages
 import re
 
 
@@ -31,6 +30,7 @@ setup(name='pic32tools',
           'tqdm',
           'bitstruct'
       ],
+      py_modules=['pic32tools'],
       entry_points = {
           'console_scripts': ['pic32tools=pic32tools:_main']
       })
