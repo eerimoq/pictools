@@ -1,0 +1,3 @@
+[submodule "3pp/simba"]
+	path = 3pp/simba
+	url = https://github.com/eerimoq/simba
