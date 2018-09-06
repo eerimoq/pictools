@@ -125,6 +125,22 @@ An example programming a binary to a PIC32.
    100%|███████████████████████████████████| 16/16 [00:00<00:00, 5022.74 bytes/s]
    Verify complete.
 
+Similar projects
+================
+
+There are a bunch of projects similar to PIC32 tools. Here are a few
+of them:
+
+- https://github.com/WallaceIT/picberry
+
+- https://github.com/sergev/pic32prog
+
+- http://usbpicprog.org/
+
+- https://wiki.kewl.org/dokuwiki/projects:pickle
+
+- http://picpgm.picprojects.net/
+  
 .. _programmer/dist: https://github.com/eerimoq/pic32tools/tree/master/programmer/dist
 
 .. _Arduino Due: https://store.arduino.cc/arduino-due
