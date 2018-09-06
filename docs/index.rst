@@ -62,7 +62,16 @@ Due). All releases are found in `programmer/dist`_.
 
 .. code-block:: text
 
-   bossac /dev/arduino
+   # Enter software upload mode.
+   > python3 -c "import serial ; serial.Serial('/dev/arduino', 1200)"
+
+   # Upload the software.
+   > bossac --port arduino -e -w -b -R programmer/dist/0.1.0/programmer.hex
+   Erase flash
+   Write 65126 bytes to flash
+   [==============================] 100% (255/255 pages)
+   Set boot flash true
+   CPU reset.
 
 Inhibit Arduino Due reset when opening the serial port to the
 programmer on Linux:
