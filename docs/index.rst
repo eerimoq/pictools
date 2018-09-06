@@ -116,7 +116,7 @@ An example programming a binary to a PIC32.
    100%|███████████████████████████████████| 16/16 [00:00<00:00, 5022.74 bytes/s]
    Verify complete.
 
-.. _programmer/dist: https://github.com/eerimoq/pic32tools/programmer/dist
+.. _programmer/dist: https://github.com/eerimoq/pic32tools/tree/master/programmer/dist
 
 .. _Arduino Due: https://store.arduino.cc/arduino-due
 
