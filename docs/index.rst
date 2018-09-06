@@ -24,7 +24,7 @@ Hardware setup
 
 .. image:: images/hardware-setup.jpg
    :width: 50%
-   :target: _static/images/hardware-setup.jpg
+   :target: _images/hardware-setup.jpg
 
 The programmer (to the right) connected to a PC with serial over
 USB. The DEF CON 26 Badge (to the left) with PIC32MM MCU to be
