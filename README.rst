@@ -72,3 +72,7 @@ Contributing
 #. Implement the new feature or bug fix.
 
 #. Create a pull request.
+
+.. _Microchip: https://www.microchip.com/
+
+.. _PIC32MM0256GPM064: https://www.microchip.com/wwwproducts/en/PIC32MM0256GPM064
