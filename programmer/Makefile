@@ -54,6 +54,4 @@ generate_ramapp_upload_instructions_i:
 
 dist:
 	mkdir -p ${DIST_PATH}
-	cp ${BUILD_PATH}/programmer.out ${DIST_PATH}
-	cp ${BUILD_PATH}/programmer.hex ${DIST_PATH}
-	cp ${BUILD_PATH}/programmer.map ${DIST_PATH}
+	cp ${BUILD_PATH}/programmer.{bin,out,hex,map} ${DIST_PATH}
