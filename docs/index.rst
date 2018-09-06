@@ -47,8 +47,8 @@ programmed.
 Installation
 ============
 
-Python script
--------------
+Python package and command line tool
+------------------------------------
 
 .. code-block:: python
 
