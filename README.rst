@@ -1,9 +1,13 @@
 About
 =====
 
-PIC32 tools.
+PIC32 tools is a collection of tools to ease PIC32 development. PIC32
+is a collection of MCU families created by `Microchip`_.
 
-- PIC32 programming.
+Features:
+
+- A PIC32 programmer based on an `Arduino Due`_. Today only
+  `PIC32MM0256GPM064`_ is supported.
 
 Project homepage: https://github.com/eerimoq/pic32tools
 
