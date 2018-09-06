@@ -80,10 +80,11 @@ programmer on Linux:
 
    stty -F /dev/arduino -hup
 
-Example usage
-=============
+Command line tool
+=================
 
-Examples of the most commonly used PIC32 tools subcommands.
+Descriptions and example usages of the most commonly used subcommands
+in the command line tool ``pic32tools``.
 
 Write to flash
 --------------
