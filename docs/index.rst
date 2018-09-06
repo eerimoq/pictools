@@ -83,7 +83,13 @@ programmer on Linux:
 Example usage
 =============
 
-An example programming a binary to a PIC32.
+Examples of the most commonly used PIC32 tools subcommands.
+
+Write to flash
+--------------
+
+Write given file ``hello_world.s19`` to flash. Optionally performs
+erase and operations.
 
 .. code-block:: text
 
@@ -125,6 +131,170 @@ An example programming a binary to a PIC32.
    100%|███████████████████████████████████| 16/16 [00:00<00:00, 5022.74 bytes/s]
    Verify complete.
 
+Read from flash
+---------------
+
+Read from the flash memory.
+
+.. code-block:: text
+
+   > pic32tools --port /dev/arduino flash_read 0x1d000000 0x1000 memory.s19
+   Programmer is alive.
+   PIC32 is alive.
+   Reading 0x1d000000-0x1d001000.
+   100%|██████████████████████████████| 4096/4096 [00:00<00:00, 18530.60 bytes/s]
+   Read complete.
+
+Read the whole flash
+--------------------
+
+Read program flash, boot flash and configuration memory.
+
+.. code-block:: text
+
+   > pic32tools --port /dev/arduino flash_read_all memory.s19
+   Programmer is alive.
+   PIC32 is alive.
+   Reading 0x1d000000-0x1d040000.
+   100%|██████████████████████████| 262144/262144 [00:13<00:00, 19075.20 bytes/s]
+   Read complete.
+   Reading 0x1fc00000-0x1fc01700.
+   100%|██████████████████████████████| 5888/5888 [00:00<00:00, 18900.71 bytes/s]
+   Read complete.
+   Reading 0x1fc01700-0x1fc01800.
+   100%|████████████████████████████████| 256/256 [00:00<00:00, 16448.50 bytes/s]
+   Read complete.
+
+Erase a flash range
+-------------------
+
+Erase given flash range.
+
+.. code-block:: text
+
+   > pic32tools --port /dev/arduino flash_erase 0x1d000000 0x1000
+   Programmer is alive.
+   PIC32 is alive.
+   Erasing 0x1d000000-0x1d001000.
+   Erase complete.
+
+Chip erase
+----------
+
+Erases program flash, boot flash and configuration memory.
+
+.. code-block:: text
+
+   > pic32tools --port /dev/arduino flash_erase_chip
+   Erasing the chip.
+   Programmer is alive.
+   Chip erase complete.
+
+Reset
+-----
+
+Reset the PIC32.
+
+.. code-block:: text
+
+   > pic32tools --port /dev/arduino reset
+   Programmer is alive.
+   Resetted PIC32.
+
+Print the configuration memory
+------------------------------
+
+Print the configuration memory.
+
+.. code-block:: text
+
+   > pic32tools --port /dev/arduino configuration_print
+   Programmer is alive.
+   PIC32 is alive.
+   FDEVOPT
+     USERID: 65535
+     FVBUSIO: 0
+     FUSBIDIO: 1
+     ALTI2C: 1
+     SOSCHP: 1
+   FICD
+     ICS: 2
+     JTAGEN: 0
+   FPOR
+     LPBOREN: 1
+     RETVR: 1
+     BOREN: 3
+   FWDT
+     FWDTEN: 0
+     RCLKSEL: 3
+     RWDTPS: 20
+     WINDIS: 1
+     FWDTWINSZ: 3
+     SWDTPS: 20
+   FOSCSEL
+     FCKSM: 1
+     SOSCSEL: 0
+     OSCIOFNC: 1
+     POSCMOD: 3
+     IESO: 1
+     SOSCEN: 0
+     PLLSRC: 1
+     FNOSC: 0
+   FSEC
+     CP: 1
+
+Print the device id
+-------------------
+
+Print the device id.
+
+.. code-block:: text
+
+   > pic32tools --port /dev/arduino device_id_print
+   Programmer is alive.
+   PIC32 is alive.
+   DEVID
+     VER: 2
+     DEVID: 0x0773c053
+
+Print the UDID
+--------------
+
+Print the unique chip id.
+
+.. code-block:: text
+
+   > pic32tools --port /dev/arduino udid_print
+   Programmer is alive.
+   PIC32 is alive.
+   UDID
+     UDID1: 0xff918406
+     UDID2: 0xff524000
+     UDID3: 0xffffff25
+     UDID4: 0xffff0219
+     UDID5: 0xffff0280
+
+Ping the programmer
+-------------------
+
+Test if the programmer is alive.
+
+.. code-block:: text
+
+   > pic32tools --port /dev/arduino programmer_ping
+   Programmer is alive.
+
+Ping the PIC32
+--------------
+
+Test if the PIC32 is alive and executing the RAM application.
+
+.. code-block:: text
+
+   > pic32tools --port /dev/arduino ping
+   Programmer is alive.
+   PIC32 is alive.
+
 Similar projects
 ================
 
@@ -140,7 +310,7 @@ of them:
 - https://wiki.kewl.org/dokuwiki/projects:pickle
 
 - http://picpgm.picprojects.net/
-  
+
 .. _programmer/dist: https://github.com/eerimoq/pic32tools/tree/master/programmer/dist
 
 .. _Arduino Due: https://store.arduino.cc/arduino-due
