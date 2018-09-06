@@ -89,7 +89,7 @@ Write to flash
 --------------
 
 Write given file ``hello_world.s19`` to flash. Optionally performs
-erase and operations.
+erase and verify operations.
 
 .. code-block:: text
 

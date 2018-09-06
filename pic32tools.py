@@ -466,7 +466,7 @@ def do_flash_write(args):
 
     for address, data in f.segments:
         address = physical_flash_address(address)
-        
+
         print('Writing 0x{:08x}-0x{:08x}.'.format(address,
                                                   address + len(data)))
 
@@ -639,7 +639,9 @@ def _main():
                         version=__version__,
                         help='Print version information and exit.')
 
-    subparsers = parser.add_subparsers()
+    # Python 3 workaround for help output if subcommand is missing.
+    subparsers = parser.add_subparsers(dest='one of the above')
+    subparsers.required = True
 
     subparser = subparsers.add_parser(
         'connect',
