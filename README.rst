@@ -9,13 +9,6 @@ Project homepage: https://github.com/eerimoq/pic32tools
 
 Documentation: http://pic32tools.readthedocs.org/en/latest
 
-Installation
-============
-
-.. code-block:: python
-
-    pip install pic32tools
-
 Example usage
 =============
 
