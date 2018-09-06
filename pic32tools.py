@@ -415,7 +415,7 @@ def do_device_status_print(args):
 def do_flash_erase_chip(args):
     print('Erasing the chip.')
 
-    execute_command(serial_open_ensure_connected_to_programmer(args.port),
+    execute_command(serial_open_ensure_disconnected(args.port),
                     PROGRAMMER_COMMAND_TYPE_CHIP_ERASE)
 
     print('Chip erase complete.')
@@ -682,7 +682,7 @@ def _main():
     subparser = subparsers.add_parser(
         'flash_write',
         help=('Write given file to flash. Optionally performs erase and '
-              'verify operations'))
+              'verify operations.'))
     subparser.add_argument('-e', '--erase', action='store_true')
     subparser.add_argument('-v', '--verify', action='store_true')
     subparser.add_argument('binfile')
@@ -702,7 +702,7 @@ def _main():
     subparser.set_defaults(func=do_device_id_print)
 
     subparser = subparsers.add_parser('udid_print',
-                                      help='Print the uniquite chip id')
+                                      help='Print the unique chip id.')
     subparser.set_defaults(func=do_udid_print)
 
     subparser = subparsers.add_parser('device_status_print',
