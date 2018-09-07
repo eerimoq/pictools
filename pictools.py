@@ -354,6 +354,14 @@ def erase(serial_connection, address, size):
     print('Erase complete.')
 
 
+def chip_erase(serial_connection):
+    print('Erasing the chip.')
+
+    execute_command(serial_connection, PROGRAMMER_COMMAND_TYPE_CHIP_ERASE)
+
+    print('Chip erase complete.')
+
+
 def connect(serial_connection):
     execute_command(serial_connection, PROGRAMMER_COMMAND_TYPE_CONNECT)
 
@@ -405,12 +413,7 @@ def do_device_status_print(args):
 
 
 def do_flash_erase_chip(args):
-    print('Erasing the chip.')
-
-    execute_command(serial_open_ensure_disconnected(args.port),
-                    PROGRAMMER_COMMAND_TYPE_CHIP_ERASE)
-
-    print('Chip erase complete.')
+    chip_erase(serial_open_ensure_disconnected(args.port))
 
 
 def do_ping(args):
@@ -438,8 +441,6 @@ def do_flash_read_all(args):
 
 
 def do_flash_write(args):
-    serial_connection = serial_open_ensure_connected(args.port)
-
     f = bincopy.BinFile()
     f.add_file(args.binfile)
 
@@ -449,10 +450,18 @@ def do_flash_write(args):
         address = physical_flash_address(address)
         erase_segments.append((address, len(data)))
 
-    if args.erase:
+    if args.chip_erase:
+        serial_connection = serial_open_ensure_disconnected(args.port)
+        chip_erase(serial_connection)
+        connect(serial_connection)
+    elif args.erase:
+        serial_connection = serial_open_ensure_connected(args.port)
+
         for address, size in erase_segments:
             address = physical_flash_address(address)
             erase(serial_connection, address, size)
+    else:
+        serial_connection = serial_open_ensure_connected(args.port)
 
     print('Writing {} to flash.'.format(os.path.abspath(args.binfile)))
 
@@ -668,6 +677,7 @@ def _main():
         help=('Write given file to flash. Optionally performs erase and '
               'verify operations.'))
     subparser.add_argument('-e', '--erase', action='store_true')
+    subparser.add_argument('-c', '--chip-erase', action='store_true')
     subparser.add_argument('-v', '--verify', action='store_true')
     subparser.add_argument('binfile')
     subparser.set_defaults(func=do_flash_write)
