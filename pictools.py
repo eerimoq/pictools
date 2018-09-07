@@ -388,14 +388,6 @@ def programmer_ping(serial_connection):
     print('Programmer is alive.')
 
 
-def do_connect(args):
-    connect(serial_open_ensure_connected_to_programmer(args.port))
-
-
-def do_disconnect(args):
-    disconnect(serial_open_ensure_connected_to_programmer(args.port))
-
-
 def do_reset(args):
     execute_command(serial_open_ensure_disconnected(args.port),
                     PROGRAMMER_COMMAND_TYPE_RESET)
@@ -627,12 +619,12 @@ def do_generate_ramapp_upload_instructions(args):
 def _main():
     description = (
         "Erase, read from and write to PIC flash memory, and more. Uploads "
-        "the RAM applicatiopn to RAM using ICSP, which in turn accesses the "
-        "flash memory.")
+        "the RAM application to the PIC RAM over ICSP, which in turn accesses "
+        "the flash memory.")
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('-p', '--port',
                         default='/dev/ttyUSB1',
-                        help='Debugger serial port (default: /dev/ttyUSB1).')
+                        help='Programmer serial port (default: /dev/ttyUSB1).')
     parser.add_argument('-d', '--debug', action='store_true')
     parser.add_argument('--version',
                         action='version',
@@ -642,16 +634,6 @@ def _main():
     # Python 3 workaround for help output if subcommand is missing.
     subparsers = parser.add_subparsers(dest='one of the above')
     subparsers.required = True
-
-    subparser = subparsers.add_parser(
-        'connect',
-        help='Upload and connect to the PIC RAM application')
-    subparser.set_defaults(func=do_connect)
-
-    subparser = subparsers.add_parser(
-        'disconnect',
-        help='Disconnect from the PIC RAM application.')
-    subparser.set_defaults(func=do_disconnect)
 
     subparser = subparsers.add_parser('reset',
                                       help='Reset the PIC.')
