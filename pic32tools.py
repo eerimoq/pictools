@@ -26,7 +26,7 @@ from tqdm import tqdm
 import bitstruct
 
 
-__version__ = '0.4.0'
+__version__ = '0.5.0'
 
 
 ERRORS = {
