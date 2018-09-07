@@ -25,7 +25,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-# This file is part of the PIC32 tools project.
+# This file is part of the PIC tools project.
 #
 
 .PHONY: generate_ramapp_upload_instructions_i dist
@@ -48,7 +48,7 @@ BUILD_PATH = build/arduino_due
 include $(SIMBA_ROOT)/make/app.mk
 
 generate_ramapp_upload_instructions_i:
-	python3 ../pic32tools.py generate_ramapp_upload_instructions \
+	python3 ../pictools.py generate_ramapp_upload_instructions \
 	    $(RAMAPP_OUT) \
 	    $(RAMAPP_UPLOAD_INSTRUCTIONS_I)
 

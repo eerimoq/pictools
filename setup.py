@@ -6,13 +6,13 @@ import re
 
 def find_version():
     return re.search(r"^__version__ = '(.*)'$",
-                     open('pic32tools.py', 'r').read(),
+                     open('pictools.py', 'r').read(),
                      re.MULTILINE).group(1)
 
 
-setup(name='pic32tools',
+setup(name='pictools',
       version=find_version(),
-      description='PIC32 tools.',
+      description='PIC tools.',
       long_description=open('README.rst', 'r').read(),
       author='Erik Moqvist',
       author_email='erik.moqvist@gmail.com',
@@ -22,15 +22,15 @@ setup(name='pic32tools',
           'Programming Language :: Python :: 2',
           'Programming Language :: Python :: 3',
       ],
-      keywords=['pic32', 'programmer'],
-      url='https://github.com/eerimoq/pic32tools',
+      keywords=['pic', 'pic32', 'programmer'],
+      url='https://github.com/eerimoq/pictools',
       install_requires=[
           'pyserial',
           'bincopy',
           'tqdm',
           'bitstruct'
       ],
-      py_modules=['pic32tools'],
+      py_modules=['pictools'],
       entry_points = {
-          'console_scripts': ['pic32tools=pic32tools:_main']
+          'console_scripts': ['pictools=pictools:_main']
       })

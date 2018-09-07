@@ -23,7 +23,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *
- * This file is part of the PIC32 tools project.
+ * This file is part of the PIC tools project.
  */
 
 #ifndef __CONFIG_H__

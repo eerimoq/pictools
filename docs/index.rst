@@ -1,4 +1,4 @@
-.. pic32tools documentation master file, created by
+.. pictools documentation master file, created by
    sphinx-quickstart on Sat Apr 25 11:54:09 2015.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
@@ -6,18 +6,18 @@
 .. toctree::
    :maxdepth: 1
 
-Welcome to the PIC32 tools documentation!
-=========================================
+Welcome to the PIC tools documentation!
+=======================================
 
-PIC32 tools is a collection of tools to ease PIC32 development. PIC32
-is a collection of MCU families created by `Microchip`_.
+`PIC tools` is a collection of tools to ease PIC development. PIC is
+family of microcontrollers made by `Microchip`_.
 
 Features:
 
-- A PIC32 programmer based on an `Arduino Due`_. Today only
+- A PIC programmer based on an `Arduino Due`_. Today only
   `PIC32MM0256GPM064`_ is supported.
 
-Project homepage: https://github.com/eerimoq/pic32tools
+Project homepage: https://github.com/eerimoq/pictools
 
 Hardware setup
 ==============
@@ -52,7 +52,7 @@ Python package and command line tool
 
 .. code-block:: python
 
-    pip install pic32tools
+    pip install pictools
 
 Programmer
 ----------
@@ -84,7 +84,7 @@ Command line tool
 =================
 
 Descriptions and example usages of the most commonly used subcommands
-in the command line tool ``pic32tools``.
+in the command line tool ``pictools``.
 
 Write to flash
 --------------
@@ -94,9 +94,9 @@ erase and verify operations.
 
 .. code-block:: text
 
-   > pic32tools --port /dev/arduino flash_write --erase --verify hello_world.s19
+   > pictools --port /dev/arduino flash_write --erase --verify hello_world.s19
    Programmer is alive.
-   PIC32 is alive.
+   PIC is alive.
    Erasing 0x1fc017c0-0x1fc017dc.
    Erase complete.
    Erasing 0x1d000000-0x1d002e38.
@@ -139,9 +139,9 @@ Read from the flash memory.
 
 .. code-block:: text
 
-   > pic32tools --port /dev/arduino flash_read 0x1d000000 0x1000 memory.s19
+   > pictools --port /dev/arduino flash_read 0x1d000000 0x1000 memory.s19
    Programmer is alive.
-   PIC32 is alive.
+   PIC is alive.
    Reading 0x1d000000-0x1d001000.
    100%|██████████████████████████████| 4096/4096 [00:00<00:00, 18530.60 bytes/s]
    Read complete.
@@ -153,9 +153,9 @@ Read program flash, boot flash and configuration memory.
 
 .. code-block:: text
 
-   > pic32tools --port /dev/arduino flash_read_all memory.s19
+   > pictools --port /dev/arduino flash_read_all memory.s19
    Programmer is alive.
-   PIC32 is alive.
+   PIC is alive.
    Reading 0x1d000000-0x1d040000.
    100%|██████████████████████████| 262144/262144 [00:13<00:00, 19075.20 bytes/s]
    Read complete.
@@ -173,9 +173,9 @@ Erase given flash range.
 
 .. code-block:: text
 
-   > pic32tools --port /dev/arduino flash_erase 0x1d000000 0x1000
+   > pictools --port /dev/arduino flash_erase 0x1d000000 0x1000
    Programmer is alive.
-   PIC32 is alive.
+   PIC is alive.
    Erasing 0x1d000000-0x1d001000.
    Erase complete.
 
@@ -186,7 +186,7 @@ Erases program flash, boot flash and configuration memory.
 
 .. code-block:: text
 
-   > pic32tools --port /dev/arduino flash_erase_chip
+   > pictools --port /dev/arduino flash_erase_chip
    Erasing the chip.
    Programmer is alive.
    Chip erase complete.
@@ -194,13 +194,13 @@ Erases program flash, boot flash and configuration memory.
 Reset
 -----
 
-Reset the PIC32.
+Reset the PIC.
 
 .. code-block:: text
 
-   > pic32tools --port /dev/arduino reset
+   > pictools --port /dev/arduino reset
    Programmer is alive.
-   Resetted PIC32.
+   Resetted PIC.
 
 Print the configuration memory
 ------------------------------
@@ -209,9 +209,9 @@ Print the configuration memory.
 
 .. code-block:: text
 
-   > pic32tools --port /dev/arduino configuration_print
+   > pictools --port /dev/arduino configuration_print
    Programmer is alive.
-   PIC32 is alive.
+   PIC is alive.
    FDEVOPT
      USERID: 65535
      FVBUSIO: 0
@@ -251,9 +251,9 @@ Print the device id.
 
 .. code-block:: text
 
-   > pic32tools --port /dev/arduino device_id_print
+   > pictools --port /dev/arduino device_id_print
    Programmer is alive.
-   PIC32 is alive.
+   PIC is alive.
    DEVID
      VER: 2
      DEVID: 0x0773c053
@@ -265,9 +265,9 @@ Print the unique chip id.
 
 .. code-block:: text
 
-   > pic32tools --port /dev/arduino udid_print
+   > pictools --port /dev/arduino udid_print
    Programmer is alive.
-   PIC32 is alive.
+   PIC is alive.
    UDID
      UDID1: 0xff918406
      UDID2: 0xff524000
@@ -282,24 +282,24 @@ Test if the programmer is alive.
 
 .. code-block:: text
 
-   > pic32tools --port /dev/arduino programmer_ping
+   > pictools --port /dev/arduino programmer_ping
    Programmer is alive.
 
-Ping the PIC32
+Ping the PIC
 --------------
 
-Test if the PIC32 is alive and executing the RAM application.
+Test if the PIC is alive and executing the RAM application.
 
 .. code-block:: text
 
-   > pic32tools --port /dev/arduino ping
+   > pictools --port /dev/arduino ping
    Programmer is alive.
-   PIC32 is alive.
+   PIC is alive.
 
 Similar projects
 ================
 
-There are a bunch of projects similar to PIC32 tools. Here are a few
+There are a bunch of projects similar to `PIC tools`. Here are a few
 of them:
 
 - https://github.com/WallaceIT/picberry
@@ -312,7 +312,7 @@ of them:
 
 - http://picpgm.picprojects.net/
 
-.. _programmer/dist: https://github.com/eerimoq/pic32tools/tree/master/programmer/dist
+.. _programmer/dist: https://github.com/eerimoq/pictools/tree/master/programmer/dist
 
 .. _Arduino Due: https://store.arduino.cc/arduino-due
 
