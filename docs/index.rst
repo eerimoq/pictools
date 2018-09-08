@@ -94,17 +94,11 @@ erase and verify operations.
 
 .. code-block:: text
 
-   > pictools --port /dev/arduino flash_write --erase --verify hello_world.s19
+   > pictools --port /dev/arduino flash_write --chip-erase --verify hello_world.s19
    Programmer is alive.
-   PIC is alive.
-   Erasing 0x1fc017c0-0x1fc017dc.
-   Erase complete.
-   Erasing 0x1d000000-0x1d002e38.
-   Erase complete.
-   Erasing 0x1d00ae38-0x1d00aee8.
-   Erase complete.
-   Erasing 0x1fc00000-0x1fc00010.
-   Erase complete.
+   Erasing the chip.
+   Chip erase complete.
+   Connected to PIC.
    Writing /home/erik/workspace/pictools/hello_world.s19 to flash.
    Writing 0x1fc017c0-0x1fc017dc.
    100%|███████████████████████████████████| 28/28 [00:00<00:00, 8714.79 bytes/s]
