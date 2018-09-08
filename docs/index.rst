@@ -68,8 +68,8 @@ Due). All releases are found in `programmer/dist`_.
    # Upload the software.
    > bossac --port arduino -e -w -b -R programmer/dist/0.3.0/programmer.bin
    Erase flash
-   Write 23064 bytes to flash
-   [==============================] 100% (91/91 pages)
+   Write 24088 bytes to flash
+   [==============================] 100% (95/95 pages)
    Set boot flash true
    CPU reset.
 
