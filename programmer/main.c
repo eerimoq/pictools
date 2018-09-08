@@ -543,21 +543,16 @@ static ssize_t ramapp_read(uint8_t *buf_p)
     size_t i;
 
     /* Read type and size. */
-    res = icsp_soft_fast_data_transfer(&icsp,
-                                       (uint8_t *)&data,
-                                       NULL,
-                                       32);
+    res = icsp_soft_fast_data_read(&icsp, &data);
 
     if (res != 0) {
         return (-EPROTO);
     }
 
-    data = reverse_32(data);
-
-    buf_p[0] = (data >> 0);
-    buf_p[1] = (data >> 8);
-    buf_p[2] = (data >> 16);
-    buf_p[3] = (data >> 24);
+    buf_p[0] = (data >> 24);
+    buf_p[1] = (data >> 16);
+    buf_p[2] = (data >> 8);
+    buf_p[3] = (data >> 0);
 
     size = ((buf_p[2] << 8) | buf_p[3]);
 
@@ -569,20 +564,16 @@ static ssize_t ramapp_read(uint8_t *buf_p)
     number_of_words = DIV_CEIL(size + CRC_SIZE, 4);
 
     for (i = 0; i < number_of_words; i++) {
-        res = icsp_soft_fast_data_transfer(&icsp,
-                                           (uint8_t *)&data,
-                                           NULL,
-                                           32);
+        res = icsp_soft_fast_data_read(&icsp, &data);
 
         if (res != 0) {
             return (-EPROTO);
         }
 
-        data = reverse_32(data);
-        buf_p[4 * i + 4] = (data >> 0);
-        buf_p[4 * i + 5] = (data >> 8);
-        buf_p[4 * i + 6] = (data >> 16);
-        buf_p[4 * i + 7] = (data >> 24);
+        buf_p[4 * i + 4] = (data >> 24);
+        buf_p[4 * i + 5] = (data >> 16);
+        buf_p[4 * i + 6] = (data >> 8);
+        buf_p[4 * i + 7] = (data >> 0);
     }
 
     return (PAYLOAD_OFFSET + size + CRC_SIZE);
@@ -598,13 +589,12 @@ static ssize_t ramapp_write(uint8_t *buf_p, size_t size)
     number_of_words = DIV_CEIL(size, 4);
 
     for (i = 0; i < number_of_words; i++) {
-        data = *(uint32_t *)(&buf_p[4 * i]);
-        data = reverse_32(data);
+        data = ((buf_p[4 * i + 0] << 24)
+                | (buf_p[4 * i + 1] << 16)
+                | (buf_p[4 * i + 2] << 8)
+                | (buf_p[4 * i + 3] << 0));
 
-        res = icsp_soft_fast_data_transfer(&icsp,
-                                           NULL,
-                                           (uint8_t *)&data,
-                                           32);
+        res = icsp_soft_fast_data_write(&icsp, data);
 
         if (res != 0) {
             return (res);
