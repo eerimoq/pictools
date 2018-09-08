@@ -32,7 +32,7 @@
 
 NAME = programmer
 BOARD ?= arduino_due
-VERSION ?= 0.2.0
+VERSION ?= 0.3.0
 
 CDEFS += \
 	CONFIG_MINIMAL_SYSTEM=1 \

@@ -66,10 +66,10 @@ Due). All releases are found in `programmer/dist`_.
    > python3 -c "import serial ; serial.Serial('/dev/arduino', 1200)"
 
    # Upload the software.
-   > bossac --port arduino -e -w -b -R programmer/dist/0.2.0/programmer.bin
+   > bossac --port arduino -e -w -b -R programmer/dist/0.3.0/programmer.bin
    Erase flash
-   Write 23832 bytes to flash
-   [==============================] 100% (94/94 pages)
+   Write 23064 bytes to flash
+   [==============================] 100% (91/91 pages)
    Set boot flash true
    CPU reset.
 
@@ -90,41 +90,18 @@ Write to flash
 --------------
 
 Write given file ``hello_world.s19`` to flash. Optionally performs
-erase and verify operations.
+erase and read back verify operations.
 
 .. code-block:: text
 
-   > pictools --port /dev/arduino flash_write --chip-erase --verify hello_world.s19
+   > pictools --port /dev/arduino flash_write --chip-erase hello_world.s19
    Programmer is alive.
    Erasing the chip.
    Chip erase complete.
    Connected to PIC.
    Writing /home/erik/workspace/pictools/hello_world.s19 to flash.
-   Writing 0x1fc017c0-0x1fc017dc.
-   100%|███████████████████████████████████| 28/28 [00:00<00:00, 8714.79 bytes/s]
+   100%|████████████████████████████| 12052/12052 [00:00<00:00, 30706.41 bytes/s]
    Write complete.
-   Writing 0x1d000000-0x1d002e38.
-   100%|████████████████████████████| 11832/11832 [00:00<00:00, 32834.95 bytes/s]
-   Write complete.
-   Writing 0x1d00ae38-0x1d00aee8.
-   100%|████████████████████████████████| 176/176 [00:00<00:00, 16626.07 bytes/s]
-   Write complete.
-   Writing 0x1fc00000-0x1fc00010.
-   100%|███████████████████████████████████| 16/16 [00:00<00:00, 4224.67 bytes/s]
-   Write complete.
-   Verifying written data.
-   Verifying 0x1fc017c0-0x1fc017dc.
-   100%|███████████████████████████████████| 28/28 [00:00<00:00, 7288.56 bytes/s]
-   Verify complete.
-   Verifying 0x1d000000-0x1d002e38.
-   100%|████████████████████████████| 11832/11832 [00:00<00:00, 22944.24 bytes/s]
-   Verify complete.
-   Verifying 0x1d00ae38-0x1d00aee8.
-   100%|████████████████████████████████| 176/176 [00:00<00:00, 15218.06 bytes/s]
-   Verify complete.
-   Verifying 0x1fc00000-0x1fc00010.
-   100%|███████████████████████████████████| 16/16 [00:00<00:00, 6654.32 bytes/s]
-   Verify complete.
 
 Read from flash
 ---------------

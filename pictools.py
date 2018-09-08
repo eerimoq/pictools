@@ -26,7 +26,7 @@ from tqdm import tqdm
 import bitstruct
 
 
-__version__ = '0.7.0'
+__version__ = '0.8.0'
 
 
 ERRORS = {
@@ -493,77 +493,51 @@ def do_flash_write(args):
 
     print('Writing {} to flash.'.format(os.path.abspath(args.binfile)))
 
-    def create_payloads(address, data):
-        payloads = []
+    chunks = list([
+        (physical_flash_address(address), data)
+        for address, data in f.segments.chunks(READ_WRITE_CHUNK_SIZE)
+    ])
+    total = sum([len(data) for _, data in chunks])
 
-        for offset in range(0, len(data), READ_WRITE_CHUNK_SIZE):
-            chunk = data[offset:offset + READ_WRITE_CHUNK_SIZE]
-            payload = struct.pack('>II', address + offset, len(chunk))
-            payload += chunk
-            payloads.append((payload, len(chunk)))
+    with tqdm(total=total, unit=' bytes') as progress:
+        # Write first packet to always have one packet in flight.
+        address, data = chunks[0]
+        header = struct.pack('>II', address, len(data))
+        send_command(serial_connection, COMMAND_TYPE_WRITE, header + data)
+        prev_chunk_size = len(data)
 
-        return payloads
-
-    for address, data in f.segments:
-        address = physical_flash_address(address)
-
-        print('Writing 0x{:08x}-0x{:08x}.'.format(address,
-                                                  address + len(data)))
-
-        payloads = create_payloads(address, data)
-
-        with tqdm(total=len(data), unit=' bytes') as progress:
-            # Write first packet to always have one packet in flight.
-            payload, prev_chunk_size = payloads[0]
-            send_command(serial_connection, COMMAND_TYPE_WRITE, payload)
-
-            for payload, chunk_size in payloads[1:]:
-                # Writes the next packet and received the response for
-                # the previous.
-                send_command(serial_connection, COMMAND_TYPE_WRITE, payload)
-                receive_command(serial_connection, COMMAND_TYPE_WRITE)
-                progress.update(prev_chunk_size)
-                prev_chunk_size = chunk_size
-
-            # Read last packet response.
+        for address, data in chunks[1:]:
+            # Writes the next packet and received the response for the
+            # previous.
+            header = struct.pack('>II', address, len(data))
+            send_command(serial_connection, COMMAND_TYPE_WRITE, header + data)
             receive_command(serial_connection, COMMAND_TYPE_WRITE)
             progress.update(prev_chunk_size)
+            prev_chunk_size = len(data)
 
-        print('Write complete.')
+        # Read last packet response.
+        receive_command(serial_connection, COMMAND_TYPE_WRITE)
+        progress.update(prev_chunk_size)
+
+    print('Write complete.')
 
     if args.verify:
         print('Verifying written data.')
 
-        for address, data in f.segments:
-            address = physical_flash_address(address)
+        with tqdm(total=total, unit=' bytes') as progress:
+            for address, data in chunks:
+                payload = struct.pack('>II', address, len(data))
+                read_data = execute_command(serial_connection,
+                                            COMMAND_TYPE_READ,
+                                            payload)
 
-            print('Verifying 0x{:08x}-0x{:08x}.'.format(address,
-                                                        address + len(data)))
+                if bytearray(read_data) != data:
+                    sys.exit(
+                        'Verify failed at address 0x{:x}.'.format(address))
 
-            with tqdm(total=len(data), unit=' bytes') as progress:
-                left = len(data)
+                progress.update(len(data))
 
-                while left > 0:
-                    if left > READ_WRITE_CHUNK_SIZE:
-                        size = READ_WRITE_CHUNK_SIZE
-                    else:
-                        size = left
-
-                    payload = struct.pack('>II', address, size)
-                    read_data = execute_command(serial_connection,
-                                                COMMAND_TYPE_READ,
-                                                payload)
-
-                    if bytearray(read_data) != data[:size]:
-                        sys.exit(
-                            'Verify failed at address 0x{:x}.'.format(address))
-
-                    address += size
-                    left -= size
-                    data = data[size:]
-                    progress.update(size)
-
-            print('Verify complete.')
+        print('Verify complete.')
 
 
 def do_configuration_print(args):
@@ -715,11 +689,13 @@ def _main():
 
     subparser = subparsers.add_parser(
         'flash_write',
-        help=('Write given file to flash. Optionally performs erase and '
-              'verify operations.'))
+        help=('Write given file to flash and verify that it has been written. '
+              'Optionally performs erase and read back verify operations.'))
     subparser.add_argument('-e', '--erase', action='store_true')
     subparser.add_argument('-c', '--chip-erase', action='store_true')
-    subparser.add_argument('-v', '--verify', action='store_true')
+    subparser.add_argument('-v', '--verify',
+                           action='store_true',
+                           help='Read back verification.')
     subparser.add_argument('binfile')
     subparser.set_defaults(func=do_flash_write)
 
