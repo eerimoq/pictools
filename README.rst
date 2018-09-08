@@ -6,8 +6,8 @@ family of microcontrollers made by `Microchip`_.
 
 Features:
 
-- A PIC programmer based on an `Arduino Due`_. Today only
-  `PIC32MM0256GPM064`_ is supported.
+- A PIC programmer based on an `Arduino Due`_. Today only the
+  `PIC32MM0256GPM064`_ family is supported.
 
 Project homepage: https://github.com/eerimoq/pictools
 

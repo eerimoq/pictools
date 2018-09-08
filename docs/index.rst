@@ -14,8 +14,8 @@ family of microcontrollers made by `Microchip`_.
 
 Features:
 
-- A PIC programmer based on an `Arduino Due`_. Today only
-  `PIC32MM0256GPM064`_ is supported.
+- A PIC programmer based on an `Arduino Due`_. Today only the
+  `PIC32MM0256GPM064`_ family is supported.
 
 Project homepage: https://github.com/eerimoq/pictools
 
@@ -85,6 +85,8 @@ Command line tool
 
 Descriptions and example usages of the most commonly used subcommands
 in the command line tool ``pictools``.
+
+Add the ``--mcu`` option before the subcommand to select your MCU.
 
 Write to flash
 --------------
@@ -282,6 +284,59 @@ of them:
 - https://wiki.kewl.org/dokuwiki/projects:pickle
 
 - http://picpgm.picprojects.net/
+
+Test matrix
+===========
+
+A list of all supported MCUs and their test results.
+
+`Write time` is the time it takes to connect to the PIC, perform a
+chip erase and write zeros to the whole memory. An example measurement
+for PIC32MM0256GPM064 can be seen below.
+
+.. code-block:: text
+
+   > time pictools --port /dev/arduino -m pic32mm0256gpm064 flash_write -c zeros.s19
+   Programmer is alive.
+   Erasing the chip.
+   Chip erase complete.
+   Connected to PIC.
+   Writing /home/erik/workspace/pictools/zeros.s19 to flash.
+   100%|██████████████████████████| 268288/268288 [00:08<00:00, 32858.33 bytes/s]
+   Write complete.
+
+   real	0m9.015s
+   user	0m0.662s
+   sys	0m0.057s
+   >
+
++-------------------+------------+------------+----------------------------+
+| MCU               | Result     | Write time | Comment                    |
++===================+============+============+============================+
+| PIC32MM0064GPM028 | Not Tested |            |                            |
++-------------------+------------+------------+----------------------------+
+| PIC32MM0128GPM028 | Not Tested |            |                            |
++-------------------+------------+------------+----------------------------+
+| PIC32MM0256GPM028 | Not Tested |            |                            |
++-------------------+------------+------------+----------------------------+
+| PIC32MM0064GPM036 | Not Tested |            |                            |
++-------------------+------------+------------+----------------------------+
+| PIC32MM0128GPM036 | Not Tested |            |                            |
++-------------------+------------+------------+----------------------------+
+| PIC32MM0256GPM036 | Not Tested |            |                            |
++-------------------+------------+------------+----------------------------+
+| PIC32MM0064GPM048 | Not Tested |            |                            |
++-------------------+------------+------------+----------------------------+
+| PIC32MM0128GPM048 | Not Tested |            |                            |
++-------------------+------------+------------+----------------------------+
+| PIC32MM0256GPM048 | Not Tested |            |                            |
++-------------------+------------+------------+----------------------------+
+| PIC32MM0064GPM064 | Not Tested |            |                            |
++-------------------+------------+------------+----------------------------+
+| PIC32MM0128GPM064 | Not Tested |            |                            |
++-------------------+------------+------------+----------------------------+
+| PIC32MM0256GPM064 | Passed     | 9.0 s      |                            |
++-------------------+------------+------------+----------------------------+
 
 .. _programmer/dist: https://github.com/eerimoq/pictools/tree/master/programmer/dist
 
