@@ -269,22 +269,6 @@ Test if the PIC is alive and executing the RAM application.
    Programmer is alive.
    PIC is alive.
 
-Similar projects
-================
-
-There are a bunch of projects similar to `PIC tools`. Here are a few
-of them:
-
-- https://github.com/WallaceIT/picberry
-
-- https://github.com/sergev/pic32prog
-
-- http://usbpicprog.org/
-
-- https://wiki.kewl.org/dokuwiki/projects:pickle
-
-- http://picpgm.picprojects.net/
-
 Test matrix
 ===========
 
@@ -337,6 +321,22 @@ for PIC32MM0256GPM064 can be seen below.
 +-------------------+------------+------------+----------------------------+
 | PIC32MM0256GPM064 | Passed     | 9.0 s      |                            |
 +-------------------+------------+------------+----------------------------+
+
+Similar projects
+================
+
+There are a bunch of projects similar to `PIC tools`. Here are a few
+of them:
+
+- https://github.com/WallaceIT/picberry
+
+- https://github.com/sergev/pic32prog
+
+- http://usbpicprog.org/
+
+- https://wiki.kewl.org/dokuwiki/projects:pickle
+
+- http://picpgm.picprojects.net/
 
 .. _programmer/dist: https://github.com/eerimoq/pictools/tree/master/programmer/dist
 
