@@ -30,5 +30,6 @@
 #define __CONFIG_H__
 
 #define CONFIG_START_CONSOLE_UART_BAUDRATE             460800
+#define CONFIG_START_CONSOLE_UART_RX_BUFFER_SIZE       2048
 
 #endif

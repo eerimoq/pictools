@@ -308,6 +308,34 @@ def execute_command(serial_connection, command_type, payload=None):
     sys.exit('Communication failure.')
 
 
+def send_command(serial_connection, command_type, payload=None):
+    """Send given command.
+
+    """
+
+    if payload is None:
+        payload = b''
+
+    packet_write(serial_connection, command_type, payload)
+
+
+def receive_command(serial_connection, command_type):
+    """Receive given command response and return the response payload.
+
+    """
+
+    response_command_type, response_payload = packet_read(serial_connection)
+
+    if response_command_type == command_type:
+        return response_payload
+    elif response_command_type == COMMAND_TYPE_FAILED:
+        error = struct.unpack('>i', response_payload)[0]
+
+        raise CommandFailedError(error)
+
+    sys.exit('Communication failure.')
+
+
 def read_to_file(serial_connection, ranges, outfile):
     binfile = bincopy.BinFile()
 
@@ -465,28 +493,41 @@ def do_flash_write(args):
 
     print('Writing {} to flash.'.format(os.path.abspath(args.binfile)))
 
+    def create_payloads(address, data):
+        payloads = []
+
+        for offset in range(0, len(data), READ_WRITE_CHUNK_SIZE):
+            chunk = data[offset:offset + READ_WRITE_CHUNK_SIZE]
+            payload = struct.pack('>II', address + offset, len(chunk))
+            payload += chunk
+            payloads.append((payload, len(chunk)))
+
+        return payloads
+
     for address, data in f.segments:
         address = physical_flash_address(address)
 
         print('Writing 0x{:08x}-0x{:08x}.'.format(address,
                                                   address + len(data)))
 
+        payloads = create_payloads(address, data)
+
         with tqdm(total=len(data), unit=' bytes') as progress:
-            left = len(data)
+            # Write first packet to always have one packet in flight.
+            payload, prev_chunk_size = payloads[0]
+            send_command(serial_connection, COMMAND_TYPE_WRITE, payload)
 
-            while left > 0:
-                if left > READ_WRITE_CHUNK_SIZE:
-                    size = READ_WRITE_CHUNK_SIZE
-                else:
-                    size = left
+            for payload, chunk_size in payloads[1:]:
+                # Writes the next packet and received the response for
+                # the previous.
+                send_command(serial_connection, COMMAND_TYPE_WRITE, payload)
+                receive_command(serial_connection, COMMAND_TYPE_WRITE)
+                progress.update(prev_chunk_size)
+                prev_chunk_size = chunk_size
 
-                payload = struct.pack('>II', address, size)
-                payload += data[:size]
-                data = data[size:]
-                execute_command(serial_connection, COMMAND_TYPE_WRITE, payload)
-                address += size
-                left -= size
-                progress.update(size)
+            # Read last packet response.
+            receive_command(serial_connection, COMMAND_TYPE_WRITE)
+            progress.update(prev_chunk_size)
 
         print('Write complete.')
 
