@@ -66,10 +66,10 @@ Due). All releases are found in `programmer/dist`_.
    > python3 -c "import serial ; serial.Serial('/dev/arduino', 1200)"
 
    # Upload the software.
-   > bossac --port arduino -e -w -b -R programmer/dist/0.1.0/programmer.bin
+   > bossac --port arduino -e -w -b -R programmer/dist/0.2.0/programmer.bin
    Erase flash
-   Write 23320 bytes to flash
-   [==============================] 100% (92/92 pages)
+   Write 23832 bytes to flash
+   [==============================] 100% (94/94 pages)
    Set boot flash true
    CPU reset.
 
