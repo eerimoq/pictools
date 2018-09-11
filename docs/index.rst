@@ -66,7 +66,7 @@ Due). All releases are found in `programmer/dist`_.
    > python3 -c "import serial ; serial.Serial('/dev/arduino', 1200)"
 
    # Upload the software.
-   > bossac --port arduino -e -w -b -R programmer/dist/0.3.0/programmer.bin
+   > bossac --port arduino -e -w -b -R programmer/dist/0.4.0/programmer.bin
    Erase flash
    Write 24088 bytes to flash
    [==============================] 100% (95/95 pages)
