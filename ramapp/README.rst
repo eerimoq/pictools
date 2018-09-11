@@ -26,6 +26,7 @@ This is the packet format:
       2         8         0  Erase flash.
       3         8         n  Read from flash.
       4       8+n         0  Write to flash.
+    106        12         0  Row write to flash.
 
 Command failure
 ^^^^^^^^^^^^^^^
@@ -71,3 +72,27 @@ Write flash
    +---+----------+------------+---------+--------------+-----+
    | 4 | 8 + size | 4b address | 4b size | <size>b data | crc |
    +---+----------+------------+---------+--------------+-----+
+
+Row write flash
+^^^^^^^^^^^^^^^
+
+Start row write packet. The response to this packet is sent after all
+data packets have been received.
+
+Address must be aligned on a 256 bytes boundary, a row, and size must
+be a multiple of 256 bytes. Crc is a 32 bits CRC of all data packets
+combined.
+
+.. code-block:: text
+
+   +-----+----+------------+---------+--------+-----+
+   | 106 | 12 | 4b address | 4b size | 4b crc | crc |
+   +-----+----+------------+---------+--------+-----+
+
+Data packet. Contains data for one flash row.
+
+.. code-block:: text
+
+   +-----------+
+   | 256b data |
+   +-----------+

@@ -80,6 +80,7 @@
 #define COMMAND_TYPE_RESET                                103
 #define COMMAND_TYPE_DEVICE_STATUS                        104
 #define COMMAND_TYPE_CHIP_ERASE                           105
+#define COMMAND_TYPE_FAST_WRITE                           106
 
 static int connected = 0;
 static struct icsp_soft_driver_t icsp;
@@ -737,6 +738,57 @@ static ssize_t handle_chip_erase(uint8_t *buf_p, size_t size)
     return (res);
 }
 
+static ssize_t handle_fast_write(uint8_t *buf_p, size_t size)
+{
+    uint8_t response;
+    int res;
+
+    if (!connected) {
+        return (-ENOTCONN);
+    }
+
+    if (size != 18) {
+        return (-EMSGSIZE);
+    }
+
+    size = ((buf_p[8] << 24)
+            | (buf_p[9] << 16)
+            | (buf_p[10] << 8)
+            | (buf_p[11] << 0));
+
+    if ((size % 256) != 0) {
+        return (-EINVAL);
+    }
+
+    if (size == 0) {
+        return (-EINVAL);
+    }
+
+    /* Forward the request to the PIC. */
+    res = ramapp_write(buf_p, 18);
+
+    if (res != 18) {
+        return (res);
+    }
+
+    /* Perform data transfer. */
+    response = 0;
+
+    while (size > 0) {
+        chan_read(sys_get_stdin(), &buf_p[4], 256);
+        res = ramapp_write(&buf_p[4], 256);
+
+        if (res != 256) {
+            return (res);
+        }
+
+        chan_write(sys_get_stdout(), &response, sizeof(response));
+        size -= 256;
+    }
+
+    return (ramapp_read(buf_p));
+}
+
 static ssize_t prepare_command_response(uint8_t *buf_p,
                                         ssize_t size)
 {
@@ -806,6 +858,9 @@ static ssize_t handle_programmer_command(int type,
         case COMMAND_TYPE_CHIP_ERASE:
             res = handle_chip_erase(buf_p, size);
             break;
+
+        case COMMAND_TYPE_FAST_WRITE:
+            return (handle_fast_write(buf_p, size));
 
         default:
             res = -1;

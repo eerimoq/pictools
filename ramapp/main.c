@@ -41,6 +41,7 @@
 #define COMMAND_TYPE_ERASE                                  2
 #define COMMAND_TYPE_READ                                   3
 #define COMMAND_TYPE_WRITE                                  4
+#define COMMAND_TYPE_FAST_WRITE                           106
 
 #define PIC32_ETAP_FASTDATA ((volatile uint32_t *) 0xff200000)
 
@@ -208,6 +209,98 @@ static ssize_t handle_write(uint8_t *buf_p, size_t size)
     return (res);
 }
 
+static ssize_t handle_fast_write(uint8_t *buf_p, size_t size)
+{
+    uint32_t address;
+    ssize_t res;
+    uint32_t actual_crc;
+    uint32_t expected_crc;
+    uint8_t buf[2][256];
+    int index;
+    int i;
+
+    if (size != 12) {
+        return (-EMSGSIZE);
+    }
+
+    address = ((buf_p[0] << 24) | (buf_p[1] << 16) | (buf_p[2] << 8) | buf_p[3]);
+    size = ((buf_p[4] << 24) | (buf_p[5] << 16) | (buf_p[6] << 8) | buf_p[7]);
+
+    if ((address % 256) != 0) {
+        return (-EINVAL);
+    }
+
+    if ((size % 256) != 0) {
+        return (-EINVAL);
+    }
+
+    if (size == 0) {
+        return (-EINVAL);
+    }
+
+    expected_crc = ((buf_p[8] << 24)
+                    | (buf_p[9] << 16)
+                    | (buf_p[10] << 8)
+                    | (buf_p[11] << 0));
+
+    /* Start the first row. */
+    fast_data_read(&buf[0][0], 256);
+
+    res = flash_async_write_row(&flash, address, &buf[0][0]);
+
+    if (res != 0) {
+        return (res);
+    }
+
+    actual_crc = crc_ccitt(0xffff, &buf[0][0], 256);
+
+    /* Middle rows. */
+    index = 1;
+
+    for (i = 256; i < size; i += 256) {
+        fast_data_read(&buf[index][0], 256);
+
+        res = flash_async_wait(&flash);
+
+        if (res != 0) {
+            return (res);
+        }
+
+        res = flash_async_write_row(&flash, address + i, &buf[index][0]);
+
+        if (res != 0) {
+            return (res);
+        }
+
+        actual_crc = crc_ccitt(actual_crc, &buf[index][0], 256);
+
+        index ^= 1;
+
+        if (memcmp(&buf[index][0], (void *)(address + i - 256), 256) != 0) {
+            return (-EFLASHWRITE);
+        }
+    }
+
+    /* Wait for the last row. */
+    res = flash_async_wait(&flash);
+
+    if (res != 0) {
+        return (res);
+    }
+
+    index ^= 1;
+
+    if (memcmp(&buf[index][0], (void *)(address + i - 256), 256) != 0) {
+        return (-EFLASHWRITE);
+    }
+
+    if (actual_crc != expected_crc) {
+        return (-EBADCRC);
+    }
+
+    return (0);
+}
+
 static ssize_t handle_command(uint8_t *buf_p, size_t size)
 {
     ssize_t res;
@@ -231,6 +324,10 @@ static ssize_t handle_command(uint8_t *buf_p, size_t size)
 
     case COMMAND_TYPE_WRITE:
         res = handle_write(&buf[PAYLOAD_OFFSET], size);
+        break;
+
+    case COMMAND_TYPE_FAST_WRITE:
+        res = handle_fast_write(&buf[PAYLOAD_OFFSET], size);
         break;
 
     default:
@@ -259,9 +356,6 @@ static ssize_t read_command_request(uint8_t *buf_p)
     crc = crc_ccitt(0xffff, &buf_p[0], PAYLOAD_OFFSET + size);
 
     if (crc != ((buf_p[size + 4] << 8) | buf_p[size + 5])) {
-        buf_p[6] = (crc >> 8);
-        buf_p[7] = crc;
-
         return (-EBADCRC);
     }
 

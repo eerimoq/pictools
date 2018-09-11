@@ -26,13 +26,14 @@ from tqdm import tqdm
 import bitstruct
 
 
-__version__ = '0.9.0'
+__version__ = '0.10.0'
 
 
 ERRORS = {
     -22: "invalid argument",
     -34: "bad value, likely a memory address out of range",
     -71: "communication between programmer and PIC failed",
+    -90: "bad message size",
     -106: "PIC already connected",
     -107: "PIC is not connected",
     -110: "PIC command timeout",
@@ -54,6 +55,7 @@ PROGRAMMER_COMMAND_TYPE_DISCONNECT    =  102
 PROGRAMMER_COMMAND_TYPE_RESET         =  103
 PROGRAMMER_COMMAND_TYPE_DEVICE_STATUS =  104
 PROGRAMMER_COMMAND_TYPE_CHIP_ERASE    =  105
+PROGRAMMER_COMMAND_TYPE_FAST_WRITE    =  106
 
 ERASE_TIMEOUT = 5
 SERIAL_TIMEOUT = 1
@@ -290,6 +292,7 @@ def packet_read(serial_connection):
 
     if len(header) != 4:
         print('error: failed to read packet header')
+
         return None, None
 
     command_type, payload_size = struct.unpack('>hH', header)
@@ -301,6 +304,7 @@ def packet_read(serial_connection):
             print('error: received {} bytes when expecting {}'.format(
                 len(payload), payload_size))
             print('error: payload:', binascii.hexlify(payload))
+
             return None, None
     else:
         payload = b''
@@ -309,12 +313,14 @@ def packet_read(serial_connection):
 
     if len(footer) != 2:
         print('error: failed to read packet footer')
+
         return None, None
 
     crc = struct.unpack('>H', footer)[0]
 
     if crc != crc_ccitt(header + payload):
         print('error: crc mismatch of received packet')
+
         return None, None
 
     return command_type, payload
@@ -504,15 +510,46 @@ def do_flash_read_all(args):
                  args.outfile)
 
 
-def do_flash_write(args):
-    f = bincopy.BinFile()
-    f.add_file(args.binfile)
+def create_chunks(binfile):
+    chunks = []
+    fast_chunks = []
+    total = 0
 
-    erase_segments = []
-
-    for address, data in f.segments:
+    for address, data in binfile.segments:
         address = physical_flash_address(address)
-        erase_segments.append((address, len(data)))
+
+        if (address % 256) != 0:
+            offset = (256 - (address % 256))
+
+            if offset > len(data):
+                offset = len(data)
+
+            chunk = (address, data[:offset])
+            chunks.append(chunk)
+        else:
+            offset = 0
+
+        number_of_fast_chunks = ((len(data) - offset) // 256)
+        fast_chunk_size = (256 * number_of_fast_chunks)
+
+        if fast_chunk_size > 0:
+            fast_chunk = (address + offset, data[offset:offset + fast_chunk_size])
+            fast_chunks.append(fast_chunk)
+
+        offset += fast_chunk_size
+        last_chunk_size = (len(data) - offset)
+
+        if last_chunk_size > 0:
+            chunk = (address + offset, data[offset:])
+            chunks.append(chunk)
+
+        total += len(data)
+
+    return chunks, fast_chunks, total
+
+
+def do_flash_write(args):
+    binfile = bincopy.BinFile(args.binfile)
 
     if args.chip_erase:
         serial_connection = serial_open_ensure_disconnected(args.port)
@@ -521,39 +558,55 @@ def do_flash_write(args):
     elif args.erase:
         serial_connection = serial_open_ensure_connected(args.port)
 
+        erase_segments = []
+
+        for address, data in binfile.segments:
+            address = physical_flash_address(address)
+            erase_segments.append((address, len(data)))
+
         for address, size in erase_segments:
             address = physical_flash_address(address)
             erase(serial_connection, address, size)
     else:
         serial_connection = serial_open_ensure_connected(args.port)
 
+    chunks, fast_chunks, total = create_chunks(binfile)
+
     print('Writing {} to flash.'.format(os.path.abspath(args.binfile)))
 
-    chunks = list([
-        (physical_flash_address(address), data)
-        for address, data in f.segments.chunks(READ_WRITE_CHUNK_SIZE)
-    ])
-    total = sum([len(data) for _, data in chunks])
-
     with tqdm(total=total, unit=' bytes') as progress:
-        # Write first packet to always have one packet in flight.
-        address, data = chunks[0]
-        header = struct.pack('>II', address, len(data))
-        send_command(serial_connection, COMMAND_TYPE_WRITE, header + data)
-        prev_chunk_size = len(data)
-
-        for address, data in chunks[1:]:
-            # Writes the next packet and received the response for the
-            # previous.
+        # Chunks.
+        for address, data in chunks:
             header = struct.pack('>II', address, len(data))
-            send_command(serial_connection, COMMAND_TYPE_WRITE, header + data)
-            receive_command(serial_connection, COMMAND_TYPE_WRITE)
-            progress.update(prev_chunk_size)
-            prev_chunk_size = len(data)
+            execute_command(serial_connection, COMMAND_TYPE_WRITE, header + data)
+            progress.update(len(data))
 
-        # Read last packet response.
-        receive_command(serial_connection, COMMAND_TYPE_WRITE)
-        progress.update(prev_chunk_size)
+        # Fast chunks.
+        for address, data in fast_chunks:
+            header = struct.pack('>III', address, len(data), crc_ccitt(data))
+            send_command(serial_connection,
+                         PROGRAMMER_COMMAND_TYPE_FAST_WRITE,
+                         header)
+
+            serial_connection.write(data[:256])
+
+            for offset in range(256, len(data), 256):
+                serial_connection.write(data[offset:offset + 256])
+                response = serial_connection.read(1)
+
+                if response != b'\x00':
+                    sys.exit('Wrong response byte to fast write.')
+
+                progress.update(256)
+
+            response = serial_connection.read(1)
+
+            if response != b'\x00':
+                sys.exit('Wrong response byte to fast write.')
+
+            progress.update(256)
+
+            receive_command(serial_connection, PROGRAMMER_COMMAND_TYPE_FAST_WRITE)
 
     print('Write complete.')
 
@@ -561,7 +614,8 @@ def do_flash_write(args):
         print('Verifying written data.')
 
         with tqdm(total=total, unit=' bytes') as progress:
-            for address, data in chunks:
+            for address, data in binfile.segments.chunks(READ_WRITE_CHUNK_SIZE):
+                address = physical_flash_address(address)
                 payload = struct.pack('>II', address, len(data))
                 read_data = execute_command(serial_connection,
                                             COMMAND_TYPE_READ,
