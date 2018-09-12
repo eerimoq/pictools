@@ -1,2 +1,4 @@
 include LICENSE
 include Makefile
+include pictools/programmer.bin
+include pictools/programmer-version.txt

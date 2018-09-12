@@ -4,7 +4,7 @@ import subprocess
 
 
 def run(command):
-    command = 'python3 -u pictools.py --port /dev/arduino ' + command
+    command = 'python3 -u -m pictools --port /dev/arduino ' + command
 
     print()
     print("# Running '{}'.".format(command))

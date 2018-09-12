@@ -1,18 +1,13 @@
 #!/usr/bin/env python
 
 from setuptools import setup
+from setuptools import find_packages
 import re
 
 
 def find_version():
     return re.search(r"^__version__ = '(.*)'$",
-                     open('pictools.py', 'r').read(),
-                     re.MULTILINE).group(1)
-
-
-def find_programmer_version():
-    return re.search(r"^VERSION \?= (.*)$",
-                     open('programmer/Makefile', 'r').read(),
+                     open('pictools/__init__.py', 'r').read(),
                      re.MULTILINE).group(1)
 
 
@@ -36,7 +31,8 @@ setup(name='pictools',
           'tqdm',
           'bitstruct'
       ],
-      py_modules=['pictools'],
+      packages=find_packages(),
+      include_package_data=True,
       entry_points = {
-          'console_scripts': ['pictools=pictools:_main']
+          'console_scripts': ['pictools=pictools.__init__:_main']
       })

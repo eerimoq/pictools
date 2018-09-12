@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """Erase, read from and write to PIC flash memory. Uploads the PE to
 SRAM using ICSP, which in turn accesses the flash memory.
 
@@ -26,7 +24,10 @@ from tqdm import tqdm
 import bitstruct
 
 
-__version__ = '0.10.0'
+__version__ = '0.11.0'
+
+
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 ERRORS = {
@@ -663,6 +664,30 @@ def do_programmer_ping(args):
     programmer_ping(serial_connection)
 
 
+def do_programmer_upload(args):
+    filename = os.path.join(SCRIPT_DIR, 'programmer-version.txt')
+
+    with open(filename, 'r') as fin:
+        version = fin.read().strip()
+
+    print('Uploading programmer application version {}.'.format(version))
+
+    # Enter software upload mode.
+    serial_connection = serial.Serial(args.port, 1200)
+    serial_connection.close()
+
+    # Upload the software.
+    port = args.port.replace('/dev/', '')
+    binfile = os.path.join(SCRIPT_DIR, 'programmer.bin')
+    command = ['bossac', '--port', port, '-e', '-w', '-b', '-R', binfile]
+
+    if args.unlock:
+        command.append('-u')
+
+    subprocess.check_call(command)
+
+    print('Upload complete.')
+
 def do_generate_ramapp_upload_instructions(args):
     instructions = []
 
@@ -859,6 +884,14 @@ def _main():
     subparser.set_defaults(func=do_programmer_ping)
 
     subparser = subparsers.add_parser(
+        'programmer_upload',
+        help='Upload the programmer application to the programmer.')
+    subparser.add_argument('-u', '--unlock',
+                           action='store_true',
+                           help='Unlock memory protection bits (give -u to bossac).')
+    subparser.set_defaults(func=do_programmer_upload)
+
+    subparser = subparsers.add_parser(
         'generate_ramapp_upload_instructions',
         help='Generate the RAM application C source file.')
     subparser.add_argument('elffile')
@@ -874,7 +907,3 @@ def _main():
             args.func(args)
         except BaseException as e:
             sys.exit(str(e))
-
-
-if __name__ == "__main__":
-    _main()

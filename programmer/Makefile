@@ -32,7 +32,7 @@
 
 NAME = programmer
 BOARD ?= arduino_due
-VERSION ?= 0.4.0
+VERSION ?= 0.5.0
 
 CDEFS += \
 	CONFIG_MINIMAL_SYSTEM=1 \
@@ -44,14 +44,17 @@ RAMAPP_OUT = ../ramapp/build/defcon26_badge/ramapp.out
 
 DIST_PATH = dist/${VERSION}
 BUILD_PATH = build/arduino_due
+PYTHON_PACKAGE_PATH = ../pictools
 
 include $(SIMBA_ROOT)/make/app.mk
 
 generate_ramapp_upload_instructions_i:
-	python3 ../pictools.py generate_ramapp_upload_instructions \
+	python3 ../pictools/__init__.py generate_ramapp_upload_instructions \
 	    $(RAMAPP_OUT) \
 	    $(RAMAPP_UPLOAD_INSTRUCTIONS_I)
 
 dist:
 	mkdir -p ${DIST_PATH}
 	cp ${BUILD_PATH}/programmer.{bin,out,hex,map} ${DIST_PATH}
+	cp ${BUILD_PATH}/programmer.bin ${PYTHON_PACKAGE_PATH}
+	echo $(VERSION) > ${PYTHON_PACKAGE_PATH}/programmer-version.txt
