@@ -47,38 +47,35 @@ programmed.
 Installation
 ============
 
-Python package and command line tool
-------------------------------------
+#. Install pictools.
 
-.. code-block:: python
+   .. code-block:: python
 
-    pip install pictools
+      pip install pictools
 
-Programmer
-----------
+#. Upload the programmer application to the Arduino Due. This requires
+   that ``bossac`` is already installed on the host machine.
 
-Upload the latest pre-built release to the programmer (an Arduino
-Due). All releases are found in `programmer/dist`_.
+   .. code-block:: text
 
-.. code-block:: text
+      > pictools --port /dev/arduino programmer_upload
+      Uploading programmer application version 0.5.0.
+      Erase flash
+      Write 22040 bytes to flash
+      [==============================] 100% (87/87 pages)
+      Set boot flash true
+      CPU reset.
+      Upload complete.
 
-   # Enter software upload mode.
-   > python3 -c "import serial ; serial.Serial('/dev/arduino', 1200)"
+   If necessary, give ``-u`` to the upload command above to unlock any
+   locked flash sectors.
 
-   # Upload the software.
-   > bossac --port arduino -e -w -b -R programmer/dist/0.4.0/programmer.bin
-   Erase flash
-   Write 24088 bytes to flash
-   [==============================] 100% (95/95 pages)
-   Set boot flash true
-   CPU reset.
+   Inhibit Arduino Due reset when opening the serial port to the
+   programmer on Linux:
 
-Inhibit Arduino Due reset when opening the serial port to the
-programmer on Linux:
+   .. code-block:: text
 
-.. code-block:: text
-
-   stty -F /dev/arduino -hup
+      stty -F /dev/arduino -hup
 
 Command line tool
 =================
