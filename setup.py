@@ -10,6 +10,12 @@ def find_version():
                      re.MULTILINE).group(1)
 
 
+def find_programmer_version():
+    return re.search(r"^VERSION \?= (.*)$",
+                     open('programmer/Makefile', 'r').read(),
+                     re.MULTILINE).group(1)
+
+
 setup(name='pictools',
       version=find_version(),
       description='PIC tools.',
