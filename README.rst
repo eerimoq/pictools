@@ -13,21 +13,6 @@ Project homepage: https://github.com/eerimoq/pictools
 
 Documentation: http://pictools.readthedocs.org/en/latest
 
-Contributing
-============
-
-#. Fork the repository.
-
-#. Install prerequisites.
-
-   .. code-block:: text
-
-      pip install -r requirements.txt
-
-#. Implement the new feature or bug fix.
-
-#. Create a pull request.
-
 .. _Arduino Due: https://store.arduino.cc/arduino-due
 
 .. _Microchip: https://www.microchip.com/
