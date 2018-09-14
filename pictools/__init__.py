@@ -63,14 +63,18 @@ SERIAL_TIMEOUT = 1
 
 READ_WRITE_CHUNK_SIZE = 1016
 
-FLASH_ADDRESS               = 0x1d000000
-FLASH_SIZE                  = 0x00040000
+PROGRAM_FLASH_ADDRESS       = 0x1d000000
+PROGRAM_FLASH_SIZE          = 0x00040000
+PROGRAM_FLASH_END           = 0x1d040000
 SFRS_ADDRESS                = 0x1f800000
 SFRS_SIZE                   = 0x00010000
+SFRS_END                    = 0x1f810000
 BOOT_FLASH_ADDRESS          = 0x1fc00000
 BOOT_FLASH_SIZE             = 0x00001700
+BOOT_FLASH_END              = 0x1fc01700
 CONFIGURATION_BITS_ADDRESS  = 0x1fc01700
 CONFIGURATION_BITS_SIZE     = 0x00000100
+CONFIGURATION_BITS_END      = 0x1fc01800
 DEVICE_ID_ADDRESS           = 0x1f803660
 UDID_ADDRESS                = 0x1fc41840
 
@@ -219,10 +223,25 @@ def format_error(error):
 
 def flash_ranges(mcu):
     return [
-        (FLASH_ADDRESS, PROGRAM_FLASH_SIZE_KB[mcu] * 1024),
+        (PROGRAM_FLASH_ADDRESS, PROGRAM_FLASH_SIZE_KB[mcu] * 1024),
         (BOOT_FLASH_ADDRESS, BOOT_FLASH_SIZE),
         (CONFIGURATION_BITS_ADDRESS, CONFIGURATION_BITS_SIZE),
     ]
+
+
+def is_program_flash_range(address, size):
+    return ((address >= PROGRAM_FLASH_ADDRESS)
+            and (((address + size) <= PROGRAM_FLASH_END)))
+
+
+def is_sfrs_range(address, size):
+    return ((address >= SFRS_ADDRESS)
+            and (((address + size) <= SFRS_END)))
+
+
+def is_boot_flash_configuration_bits_range(address, size):
+    return ((address >= BOOT_FLASH_ADDRESS)
+            and (((address + size) <= CONFIGURATION_BITS_END)))
 
 
 def physical_flash_address(address):
@@ -490,12 +509,28 @@ def do_flash_erase(args):
     address = int(args.address, 0)
     size = int(args.size, 0)
 
+    if not (is_program_flash_range(address, size)
+            or is_boot_flash_configuration_bits_range(address, size)):
+        sys.exit(
+            'error: address 0x{:08x} and size {} is out of range'.format(
+                address,
+                size))
+
     erase(serial_open_ensure_connected(args.port), address, size)
 
 
 def do_flash_read(args):
     address = int(args.address, 0)
     size = int(args.size, 0)
+
+    if not (is_program_flash_range(address, size)
+            or is_boot_flash_configuration_bits_range(address, size)
+            or is_sfrs_range(address, size)):
+        sys.exit(
+            'error: address 0x{:08x} and size {} is out of range'.format(
+                address,
+                size))
+
     serial_connection = serial_open_ensure_connected(args.port)
     read_to_file(serial_connection, [(address, size)], args.outfile)
 
@@ -514,19 +549,27 @@ def create_chunks(binfile):
 
     for address, data in binfile.segments:
         address = physical_flash_address(address)
+        size = len(data)
+
+        if not (is_program_flash_range(address, size)
+                or is_boot_flash_configuration_bits_range(address, size)):
+            sys.exit(
+                'error: address 0x{:08x} and size {} is out of range'.format(
+                    address,
+                    size))
 
         if (address % 256) != 0:
             offset = (256 - (address % 256))
 
-            if offset > len(data):
-                offset = len(data)
+            if offset > size:
+                offset = size
 
             chunk = (address, data[:offset])
             chunks.append(chunk)
         else:
             offset = 0
 
-        number_of_fast_chunks = ((len(data) - offset) // 256)
+        number_of_fast_chunks = ((size - offset) // 256)
         fast_chunk_size = (256 * number_of_fast_chunks)
 
         if fast_chunk_size > 0:
@@ -534,13 +577,13 @@ def create_chunks(binfile):
             fast_chunks.append(fast_chunk)
 
         offset += fast_chunk_size
-        last_chunk_size = (len(data) - offset)
+        last_chunk_size = (size - offset)
 
         if last_chunk_size > 0:
             chunk = (address + offset, data[offset:])
             chunks.append(chunk)
 
-        total += len(data)
+        total += size
 
     return chunks, fast_chunks, total
 
