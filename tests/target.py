@@ -40,6 +40,7 @@ def main():
         fout.write(binfile.as_srec())
 
     run('flash_write --chip-erase zeros.s19', timed=True)
+    run('flash_erase_chip')
 
 
 if __name__ == '__main__':

@@ -90,16 +90,8 @@ static ssize_t handle_erase(uint8_t *buf_p, size_t size)
 {
     uint32_t address;
 
-    if (size < 8) {
-        return (-EMSGSIZE);
-    }
-
     address = ((buf_p[0] << 24) | (buf_p[1] << 16) | (buf_p[2] << 8) | buf_p[3]);
     size = ((buf_p[4] << 24) | (buf_p[5] << 16) | (buf_p[6] << 8) | buf_p[7]);
-
-    if (size == 0) {
-        return (-EINVAL);
-    }
 
     return (flash_erase(&flash, address, size));
 }
@@ -111,16 +103,8 @@ static ssize_t handle_read(uint8_t *buf_p, size_t size)
     uint8_t *dst_p;
     uint8_t *src_p;
 
-    if (size != 8) {
-        return (-EMSGSIZE);
-    }
-
     address = ((buf_p[0] << 24) | (buf_p[1] << 16) | (buf_p[2] << 8) | buf_p[3]);
     size = ((buf_p[4] << 24) | (buf_p[5] << 16) | (buf_p[6] << 8) | buf_p[7]);
-
-    if (size > MAXIMUM_PAYLOAD_SIZE) {
-        return (-EINVAL);
-    }
 
     dst_p = buf_p;
     src_p = (uint8_t *)address;
@@ -137,16 +121,8 @@ static ssize_t handle_write(uint8_t *buf_p, size_t size)
     uint32_t address;
     ssize_t res;
 
-    if (size < 8) {
-        return (-EMSGSIZE);
-    }
-
     address = ((buf_p[0] << 24) | (buf_p[1] << 16) | (buf_p[2] << 8) | buf_p[3]);
     size = ((buf_p[4] << 24) | (buf_p[5] << 16) | (buf_p[6] << 8) | buf_p[7]);
-
-    if (size > MAXIMUM_PAYLOAD_SIZE) {
-        return (-EINVAL);
-    }
 
     res = flash_write(&flash, address, &buf_p[8], size);
 
@@ -171,25 +147,8 @@ static ssize_t handle_fast_write(uint8_t *buf_p, size_t size)
     int index;
     int i;
 
-    if (size != 12) {
-        return (-EMSGSIZE);
-    }
-
     address = ((buf_p[0] << 24) | (buf_p[1] << 16) | (buf_p[2] << 8) | buf_p[3]);
     size = ((buf_p[4] << 24) | (buf_p[5] << 16) | (buf_p[6] << 8) | buf_p[7]);
-
-    if ((address % 256) != 0) {
-        return (-EINVAL);
-    }
-
-    if ((size % 256) != 0) {
-        return (-EINVAL);
-    }
-
-    if (size == 0) {
-        return (-EINVAL);
-    }
-
     expected_crc = ((buf_p[8] << 24)
                     | (buf_p[9] << 16)
                     | (buf_p[10] << 8)
