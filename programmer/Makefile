@@ -39,8 +39,8 @@ CDEFS += \
 	CONFIG_ICSP_SOFT=1 \
 	CONFIG_PIN=1
 
-RAMAPP_UPLOAD_INSTRUCTIONS_I = ramapp_upload_instructions.i
-RAMAPP_OUT = ../ramapp/build/defcon26_badge/ramapp.out
+RAMAPP_UPLOAD_INSTRUCTIONS_I = programmer/ramapp_upload_instructions.i
+RAMAPP_OUT = ramapp/build/defcon26_badge/ramapp.out
 
 DIST_PATH = dist/${VERSION}
 BUILD_PATH = build/arduino_due
@@ -49,7 +49,7 @@ PYTHON_PACKAGE_PATH = ../pictools
 include $(SIMBA_ROOT)/make/app.mk
 
 generate_ramapp_upload_instructions_i:
-	python3 ../pictools/__init__.py generate_ramapp_upload_instructions \
+	cd .. && python3 -m pictools generate_ramapp_upload_instructions \
 	    $(RAMAPP_OUT) \
 	    $(RAMAPP_UPLOAD_INSTRUCTIONS_I)
 
