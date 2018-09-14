@@ -1,7 +1,7 @@
-PIC32 Tool
-==========
+PIC32 RAM application (PE)
+==========================
 
-Erase, read and write PIC32 flash memories.
+Erase, read and write PIC32 flash memories, and more.
 
 Upload this application to PIC32 MCU using the ICSP protocol.
 
@@ -73,10 +73,10 @@ Write flash
    | 4 | 8 + size | 4b address | 4b size | <size>b data | crc |
    +---+----------+------------+---------+--------------+-----+
 
-Row write flash
-^^^^^^^^^^^^^^^
+Fast write flash
+^^^^^^^^^^^^^^^^
 
-Start row write packet. The response to this packet is sent after all
+Start fast write packet. The response to this packet is sent after all
 data packets have been received.
 
 Address must be aligned on a 256 bytes boundary, a row, and size must
@@ -96,3 +96,35 @@ Data packet. Contains data for one flash row.
    +-----------+
    | 256b data |
    +-----------+
+
+Example fast write sequence with a request, multiple data packets and
+a response:
+
+.. code-block:: text
+
+   +-------------+                          +---------+
+   | programmer  |                          | ramapp  |
+   +-------------+                          +---------+
+          |                                      |
+          |   Fast write request of 18176 bytes  |
+          |------------------------------------->|
+          |                                      |
+          |              Data 0-255              |
+          |------------------------------------->|
+          |                                      |
+          |             Data 256-511             |
+          |------------------------------------->|
+          |                                      |
+          |             Data 512-767             |
+          |------------------------------------->|
+          |                                      |
+          .                                      .
+          .                                      .
+          .                                      .
+          |           Data 17920-18175           |
+          |------------------------------------->|
+          |                                      |
+          |         Fast write response          |
+          |<-------------------------------------|
+          |                                      |
+          |                                      |
