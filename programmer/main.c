@@ -82,6 +82,10 @@
 #define COMMAND_TYPE_CHIP_ERASE                           105
 #define COMMAND_TYPE_FAST_WRITE                           106
 
+/* Packet sizes. */
+#define PACKET_FAST_WRITE_REQUEST_SIZE                     18
+#define PACKET_FAST_WRITE_DATA_SIZE                       256
+
 static int connected = 0;
 static struct icsp_soft_driver_t icsp;
 static uint8_t buf[PAYLOAD_OFFSET + MAXIMUM_PAYLOAD_SIZE + CRC_SIZE + 2];
@@ -110,11 +114,7 @@ static uint32_t reverse_32(uint32_t v)
 static int send_command(struct icsp_soft_driver_t *icsp_p,
                         uint8_t command)
 {
-    int res;
-
-    res = icsp_soft_instruction_write(icsp_p, &command, 5);
-
-    return (res);
+    return (icsp_soft_instruction_write(icsp_p, &command, 5));
 }
 
 static int xfer_data_32(struct icsp_soft_driver_t *icsp_p,
@@ -293,163 +293,6 @@ static int upload_ramapp(struct icsp_soft_driver_t *icsp_p)
     return (res);
 }
 
-#if 0
-
-static int xfer_fast_data_32(struct icsp_soft_driver_t *icsp_p,
-                             uint32_t request,
-                             uint32_t *response_p)
-{
-    int res;
-
-    request = htonl(request);
-
-    res = icsp_soft_fast_data_transfer(icsp_p,
-                                       (uint8_t *)response_p,
-                                       (uint8_t *)&request,
-                                       32);
-
-    if (res != 0) {
-        return (res);
-    }
-
-    *response_p = ntohl(*response_p);
-
-    return (res);
-}
-
-static int read_from_address(struct icsp_soft_driver_t *icsp_p,
-                             uint32_t address,
-                             uint32_t *response_p)
-{
-    int res;
-
-    /* Load Fast Data register address to s3. */
-    res = xfer_instruction(icsp_p, 0xff2041b3);
-
-    if (res != 0) {
-        return (res);
-    }
-
-    /* Load memory address to be read into t0. */
-    res = xfer_instruction(icsp_p, (address & 0xffff0000) | 0x41a8);
-
-    if (res != 0) {
-        return (res);
-    }
-
-    res = xfer_instruction(icsp_p, (address << 16) | 0x5108);
-
-    if (res != 0) {
-        return (res);
-    }
-
-    /* Read data. */
-    res = xfer_instruction(icsp_p, 0x0000fd28);
-
-    if (res != 0) {
-        return (res);
-    }
-
-    /* Store data into Fast Data register. */
-    res = xfer_instruction(icsp_p, 0x0000f933);
-
-    if (res != 0) {
-        return (res);
-    }
-
-    res = xfer_instruction(icsp_p, 0x00000000);
-
-    if (res != 0) {
-        return (res);
-    }
-
-    /* Shift out the data. */
-    res = send_command(icsp_p, ETAP_FASTDATA);
-
-    if (res != 0) {
-        return (res);
-    }
-
-    res = xfer_fast_data_32(icsp_p, 0, response_p);
-
-    return (res);
-}
-
-static int read_device_id(struct icsp_soft_driver_t *icsp_p,
-                          uint32_t *device_id_p)
-{
-    return (xfer_data_32(icsp_p, 0, device_id_p));
-}
-
- void print_device_id(struct icsp_soft_driver_t *icsp_p,
-                            void *out_p)
-{
-    int res;
-    uint32_t device_id;
-
-    res = read_device_id(icsp_p, &device_id);
-
-    if (res < 0) {
-        std_fprintf(out_p,
-                    OSTR("Failed to read device id with %d.\r\n"),
-                    res);
-    } else {
-        std_fprintf(out_p,
-                    OSTR("DEVICE ID: 0x%08x\r\n"),
-                    reverse_32(device_id));
-    }
-}
-
-static void print_device_configuration(struct icsp_soft_driver_t *icsp_p,
-                                       void *out_p)
-{
-    uint32_t i;
-    uint32_t response;
-    int res;
-
-    for (i = 0; i < 10; i++) {
-        res = read_from_address(icsp_p, 0xbfc017c0 + 4 * i, &response);
-
-        if (res == 0) {
-            std_printf(OSTR("[%2d]: 0x%08x\r\n"), i, reverse_32(response));
-        } else {
-            std_printf(
-                OSTR("Failed to read device configuration with %d.\r\n"),
-                res);
-        }
-    }
-}
-
-static void print_device_status(struct icsp_soft_driver_t *icsp_p,
-                                void *out_p)
-{
-    int status;
-
-    status = read_device_status(icsp_p);
-
-    if (status < 0) {
-        std_fprintf(out_p,
-                    OSTR("Failed to read device status with %d.\r\n"),
-                    status);
-    } else {
-        std_fprintf(out_p,
-                    OSTR("STATUS: 0x%02x\r\n"
-                         "  CPS:    %d\r\n"
-                         "  NVMERR: %d\r\n"
-                         "  CFGRDY: %d\r\n"
-                         "  FCBUSY: %d\r\n"
-                         "  DEVRST: %d\r\n"),
-                    reverse_8(status),
-                    (status & STATUS_CPS) != 0,
-                    (status & STATUS_NVMERR) != 0,
-                    (status & STATUS_CFGRDY) != 0,
-                    (status & STATUS_FCBUSY) != 0,
-                    (status & STATUS_DEVRST) != 0);
-    }
-}
-
-#endif
-
 static int read_device_status(struct icsp_soft_driver_t *icsp_p)
 {
     int res;
@@ -520,8 +363,9 @@ static int chip_erase(struct icsp_soft_driver_t *icsp_p)
     time_get(&end_time);
     time_add(&end_time, &end_time, &time);
 
+    command = MCHP_STATUS;
+
     do {
-        command = MCHP_STATUS;
         res = icsp_soft_data_transfer(icsp_p, &status, &command, 8);
         status &= (STATUS_FCBUSY | STATUS_CFGRDY);
 
@@ -535,6 +379,11 @@ static int chip_erase(struct icsp_soft_driver_t *icsp_p)
     return (res);
 }
 
+/**
+ * Read a packet from the ramapp in the PIC.
+ *
+ * @return Number of read bytes or negative error code.
+ */
 static ssize_t ramapp_read(uint8_t *buf_p)
 {
     int res;
@@ -580,6 +429,11 @@ static ssize_t ramapp_read(uint8_t *buf_p)
     return (PAYLOAD_OFFSET + size + CRC_SIZE);
 }
 
+/**
+ * Write a packet to the ramapp in the PIC.
+ *
+ * @return zero(0) or negative error code.
+ */
 static ssize_t ramapp_write(uint8_t *buf_p, size_t size)
 {
     uint32_t data;
@@ -603,7 +457,6 @@ static ssize_t ramapp_write(uint8_t *buf_p, size_t size)
     }
 
     return (size);
-
 }
 
 static ssize_t handle_ramapp_command(uint8_t *buf_p, size_t size)
@@ -747,7 +600,7 @@ static ssize_t handle_fast_write(uint8_t *buf_p, size_t size)
         return (-ENOTCONN);
     }
 
-    if (size != 18) {
+    if (size != PACKET_FAST_WRITE_REQUEST_SIZE) {
         return (-EMSGSIZE);
     }
 
@@ -756,7 +609,7 @@ static ssize_t handle_fast_write(uint8_t *buf_p, size_t size)
             | (buf_p[10] << 8)
             | (buf_p[11] << 0));
 
-    if ((size % 256) != 0) {
+    if ((size % PACKET_FAST_WRITE_DATA_SIZE) != 0) {
         return (-EINVAL);
     }
 
@@ -765,9 +618,9 @@ static ssize_t handle_fast_write(uint8_t *buf_p, size_t size)
     }
 
     /* Forward the request to the PIC. */
-    res = ramapp_write(buf_p, 18);
+    res = ramapp_write(buf_p, PACKET_FAST_WRITE_REQUEST_SIZE);
 
-    if (res != 18) {
+    if (res != PACKET_FAST_WRITE_REQUEST_SIZE) {
         return (res);
     }
 
@@ -775,15 +628,15 @@ static ssize_t handle_fast_write(uint8_t *buf_p, size_t size)
     response = 0;
 
     while (size > 0) {
-        chan_read(sys_get_stdin(), &buf_p[4], 256);
-        res = ramapp_write(&buf_p[4], 256);
+        chan_read(sys_get_stdin(), &buf_p[4], PACKET_FAST_WRITE_DATA_SIZE);
+        res = ramapp_write(&buf_p[4], PACKET_FAST_WRITE_DATA_SIZE);
 
-        if (res != 256) {
+        if (res != PACKET_FAST_WRITE_DATA_SIZE) {
             return (res);
         }
 
         chan_write(sys_get_stdout(), &response, sizeof(response));
-        size -= 256;
+        size -= PACKET_FAST_WRITE_DATA_SIZE;
     }
 
     return (ramapp_read(buf_p));
