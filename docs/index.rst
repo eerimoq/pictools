@@ -335,6 +335,12 @@ of them:
 
 - http://picpgm.picprojects.net/
 
+- https://github.com/jaromir-sukuba/a-p-prog
+
+- https://github.com/G4me4u/pic-programmer-arduino
+
+- https://github.com/rweather/ardpicprog
+
 .. _programmer/dist: https://github.com/eerimoq/pictools/tree/master/programmer/dist
 
 .. _Arduino Due: https://store.arduino.cc/arduino-due
