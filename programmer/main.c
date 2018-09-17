@@ -29,40 +29,40 @@
 #include "simba.h"
 
 /* ICSP pin devices. */
-#define pin_pgec_dev   pin_d2_dev
-#define pin_pged_dev   pin_d3_dev
-#define pin_mclrn_dev  pin_d4_dev
+#define pin_pgec_dev                              pin_d2_dev
+#define pin_pged_dev                              pin_d3_dev
+#define pin_mclrn_dev                             pin_d4_dev
 
 /* Device status. */
-#define STATUS_CPS     reverse_8(BIT(7))
-#define STATUS_NVMERR  reverse_8(BIT(5))
-#define STATUS_CFGRDY  reverse_8(BIT(3))
-#define STATUS_FCBUSY  reverse_8(BIT(2))
-#define STATUS_DEVRST  reverse_8(BIT(0))
+#define STATUS_CPS                          reverse_8(BIT(7))
+#define STATUS_NVMERR                       reverse_8(BIT(5))
+#define STATUS_CFGRDY                       reverse_8(BIT(3))
+#define STATUS_FCBUSY                       reverse_8(BIT(2))
+#define STATUS_DEVRST                       reverse_8(BIT(0))
 
-#define CONTROL_PRACC     reverse_32(BIT(18))
-#define CONTROL_PROBEN    reverse_32(BIT(15))
-#define CONTROL_PROBTRAP  reverse_32(BIT(14))
-#define CONTROL_EJTAGBRK  reverse_32(BIT(12))
+#define CONTROL_PRACC                     reverse_32(BIT(18))
+#define CONTROL_PROBEN                    reverse_32(BIT(15))
+#define CONTROL_PROBTRAP                  reverse_32(BIT(14))
+#define CONTROL_EJTAGBRK                  reverse_32(BIT(12))
 
 /* MCHP TAP instructions. */
-#define MTAP_COMMAND    reverse_8(0x07)
-#define MTAP_SW_MTAP    reverse_8(0x04)
-#define MTAP_SW_ETAP    reverse_8(0x05)
-#define MTAP_IDCODE     reverse_8(0x01)
+#define MTAP_COMMAND                          reverse_8(0x07)
+#define MTAP_SW_MTAP                          reverse_8(0x04)
+#define MTAP_SW_ETAP                          reverse_8(0x05)
+#define MTAP_IDCODE                           reverse_8(0x01)
 
 /* EJTAG TAP instructions. */
-#define ETAP_ADDRESS    reverse_8(0x08)
-#define ETAP_DATA       reverse_8(0x09)
-#define ETAP_CONTROL    reverse_8(0x0a)
-#define ETAP_EJTAGBOOT  reverse_8(0x0c)
-#define ETAP_FASTDATA   reverse_8(0x0e)
+#define ETAP_ADDRESS                          reverse_8(0x08)
+#define ETAP_DATA                             reverse_8(0x09)
+#define ETAP_CONTROL                          reverse_8(0x0a)
+#define ETAP_EJTAGBOOT                        reverse_8(0x0c)
+#define ETAP_FASTDATA                         reverse_8(0x0e)
 
 /* MTAP commands. */
-#define MCHP_STATUS         reverse_8(0x00)
-#define MCHP_ASSERT_RST     reverse_8(0xd1)
-#define MCHP_DE_ASSERT_RST  reverse_8(0xd0)
-#define MCHP_ERASE          reverse_8(0xfc)
+#define MCHP_STATUS                           reverse_8(0x00)
+#define MCHP_ASSERT_RST                       reverse_8(0xd1)
+#define MCHP_DE_ASSERT_RST                    reverse_8(0xd0)
+#define MCHP_ERASE                            reverse_8(0xfc)
 
 /* Protocol. */
 #define TYPE_SIZE                                           2
