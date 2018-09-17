@@ -48,6 +48,22 @@
 static struct flash_driver_t flash;
 static uint8_t buf[PAYLOAD_OFFSET + MAXIMUM_PAYLOAD_SIZE + CRC_SIZE + 2];
 
+/**
+ * Faster than memcpy.
+ */
+static int cmp32(uint32_t *b1_p, uint32_t *b2_p, size_t size)
+{
+    size_t i;
+
+    for (i = 0; i < size / 4; i++) {
+        if (b1_p[i] != b2_p[i]) {
+            return (1);
+        }
+    }
+
+    return (0);
+}
+
 static ssize_t fast_data_read(uint8_t *buf_p, size_t size)
 {
     uint32_t data;
@@ -166,15 +182,26 @@ static ssize_t handle_fast_write(uint8_t *buf_p, size_t size)
     actual_crc = crc_ccitt(0xffff, &buf[0][0], 256);
 
     /* Middle rows. */
-    index = 1;
+    index = 0;
 
     for (i = 256; i < size; i += 256) {
+        index ^= 1;
         fast_data_read(&buf[index][0], 256);
 
         res = flash_async_wait(&flash);
 
         if (res != 0) {
             return (res);
+        }
+
+        /* Reading from flash at the same time as writing stalls the
+           CPU until the write is complete. */
+        res = cmp32((uint32_t *)&buf[index ^ 1][0],
+                    (void *)(address + i - 256),
+                    256);
+
+        if (res != 0) {
+            return (-EFLASHWRITE);
         }
 
         res = flash_async_write_row(&flash, address + i, &buf[index][0]);
@@ -184,12 +211,6 @@ static ssize_t handle_fast_write(uint8_t *buf_p, size_t size)
         }
 
         actual_crc = crc_ccitt(actual_crc, &buf[index][0], 256);
-
-        index ^= 1;
-
-        if (memcmp(&buf[index][0], (void *)(address + i - 256), 256) != 0) {
-            return (-EFLASHWRITE);
-        }
     }
 
     /* Wait for the last row. */
@@ -199,9 +220,11 @@ static ssize_t handle_fast_write(uint8_t *buf_p, size_t size)
         return (res);
     }
 
-    index ^= 1;
+    res = cmp32((uint32_t *)&buf[index][0],
+                (void *)(address + i - 256),
+                256);
 
-    if (memcmp(&buf[index][0], (void *)(address + i - 256), 256) != 0) {
+    if (res != 0) {
         return (-EFLASHWRITE);
     }
 
@@ -307,9 +330,34 @@ static void write_command_response(uint8_t *buf_p, ssize_t size)
     fast_data_write(buf_p, size);
 }
 
+static void clock_init(void)
+{
+    /* Unlock. */
+    pic32mm_reg_write(&PIC32MM_RDS_CONF->SYSKEY, PIC32MM_RDS_CONF_SYSKEY_LOCK);
+    pic32mm_reg_write(&PIC32MM_RDS_CONF->SYSKEY, PIC32MM_RDS_CONF_SYSKEY_UNLOCK_1);
+    pic32mm_reg_write(&PIC32MM_RDS_CONF->SYSKEY, PIC32MM_RDS_CONF_SYSKEY_UNLOCK_2);
+
+    /* Use FRC as input to PLL and multiple by 3 to 24 MHz SPLL. */
+    pic32mm_reg_write(&PIC32MM_OSC->SPLLCON, (PIC32MM_OSC_SPLLCON_PLLICLK
+                                              | PIC32MM_OSC_SPLLCON_PLLMULT_3));
+
+    /* Select SPLL as clock. */
+    pic32mm_reg_write(&PIC32MM_OSC->OSCCON, PIC32MM_OSC_OSCCON_NOSC_SPLL);
+
+    /* Perform the clock switch. */
+    pic32mm_reg_set(&PIC32MM_OSC->OSCCON, PIC32MM_OSC_OSCCON_OSWEN);
+
+    while (pic32mm_reg_read(&PIC32MM_OSC->OSCCON) & PIC32MM_OSC_OSCCON_OSWEN);
+
+    /* Lock. */
+    pic32mm_reg_write(&PIC32MM_RDS_CONF->SYSKEY, PIC32MM_RDS_CONF_SYSKEY_LOCK);
+}
+
 int main()
 {
     ssize_t size;
+
+    clock_init();
 
     flash_module_init();
     flash_init(&flash, &flash_device[0]);

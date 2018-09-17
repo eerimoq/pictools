@@ -24,7 +24,7 @@ from tqdm import tqdm
 import bitstruct
 
 
-__version__ = '0.11.0'
+__version__ = '0.12.0'
 
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -61,7 +61,7 @@ PROGRAMMER_COMMAND_TYPE_FAST_WRITE    =  106
 ERASE_TIMEOUT = 5
 SERIAL_TIMEOUT = 1
 
-READ_WRITE_CHUNK_SIZE = 1016
+READ_WRITE_CHUNK_SIZE = 504
 
 PROGRAM_FLASH_ADDRESS       = 0x1d000000
 PROGRAM_FLASH_SIZE          = 0x00040000
@@ -357,6 +357,10 @@ def serial_open_ensure_disconnected(port):
         if e.error != -107:
             raise
 
+    execute_command(serial_connection, PROGRAMMER_COMMAND_TYPE_RESET)
+
+    print('Resetted PIC.')
+
     return serial_connection
 
 
@@ -553,10 +557,8 @@ def programmer_ping(serial_connection):
 
 
 def do_reset(args):
-    execute_command(serial_open_ensure_disconnected(args.port),
-                    PROGRAMMER_COMMAND_TYPE_RESET)
-
-    print('Resetted PIC.')
+    # This function performs a reset.
+    serial_open_ensure_disconnected(args.port)
 
 
 def do_device_status_print(args):

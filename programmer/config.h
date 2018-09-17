@@ -29,7 +29,11 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-#define CONFIG_START_CONSOLE_UART_BAUDRATE             460800
-#define CONFIG_START_CONSOLE_UART_RX_BUFFER_SIZE       2048
+#define CONFIG_MINIMAL_SYSTEM                          1
+#define CONFIG_ICSP_SOFT                               1
+#define CONFIG_PIN                                     1
+#define CONFIG_USB                                     1
+#define CONFIG_START_CONSOLE_RX_BUFFER_SIZE            2048
+#define CONFIG_START_CONSOLE                           CONFIG_START_CONSOLE_USB_CDC
 
 #endif

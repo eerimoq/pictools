@@ -68,14 +68,7 @@ Installation
       Upload complete.
 
    If necessary, give ``-u`` to the upload command above to unlock any
-   locked flash sectors.
-
-   Inhibit Arduino Due reset when opening the serial port to the
-   programmer on Linux:
-
-   .. code-block:: text
-
-      stty -F /dev/arduino -hup
+   locked flash regions.
 
 Command line tool
 =================
