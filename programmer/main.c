@@ -29,9 +29,9 @@
 #include "simba.h"
 
 /* ICSP pin devices. */
-#define pin_pgec_dev                              pin_d2_dev
-#define pin_pged_dev                              pin_d3_dev
-#define pin_mclrn_dev                             pin_d4_dev
+#define pin_pgec_dev                               pin_d2_dev
+#define pin_pged_dev                               pin_d3_dev
+#define pin_mclrn_dev                              pin_d4_dev
 
 /* Device status. */
 #define STATUS_CPS                          reverse_8(BIT(7))
