@@ -252,7 +252,8 @@ static ssize_t handle_command(uint8_t *buf_p, size_t size)
 static ssize_t read_command_request(uint8_t *buf_p)
 {
     ssize_t size;
-    uint16_t crc;
+    uint16_t actual_crc;
+    uint16_t expected_crc;
 
     /* Read type and size. */
     fast_data_read(&buf_p[0], PAYLOAD_OFFSET);
@@ -263,10 +264,14 @@ static ssize_t read_command_request(uint8_t *buf_p)
         return (-EINVAL);
     }
 
-    fast_data_read(&buf_p[4], size + 2);
-    crc = crc_ccitt(0xffff, &buf_p[0], PAYLOAD_OFFSET + size);
+    /* Read payload and crc. */
+    fast_data_read(&buf_p[PAYLOAD_OFFSET], size + CRC_SIZE);
 
-    if (crc != ((buf_p[size + 4] << 8) | buf_p[size + 5])) {
+    expected_crc = ((buf_p[PAYLOAD_OFFSET + size] << 8)
+                    | buf_p[PAYLOAD_OFFSET + size + 1]);
+    actual_crc = crc_ccitt(0xffff, &buf_p[0], PAYLOAD_OFFSET + size);
+
+    if (actual_crc != expected_crc) {
         return (-EBADCRC);
     }
 
