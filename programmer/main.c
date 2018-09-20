@@ -841,13 +841,8 @@ static FAR const struct usb_descriptor_configuration_t
 configuration_descriptor = {
     .length = sizeof(configuration_descriptor),
     .descriptor_type = DESCRIPTOR_TYPE_CONFIGURATION,
-#if CONFIG_START_CONSOLE == CONFIG_START_CONSOLE_NONE
-    .total_length = 141,
-    .num_interfaces = 4,
-#else
     .total_length = 75,
     .num_interfaces = 2,
-#endif
     .configuration_value = 1,
     .configuration = 0,
     .configuration_attributes = CONFIGURATION_ATTRIBUTES_BUS_POWERED,
@@ -956,96 +951,6 @@ endpoint_3_descriptor = {
     .interval = 128
 };
 
-#if CONFIG_START_CONSOLE == CONFIG_START_CONSOLE_NONE
-
-static FAR const struct usb_descriptor_interface_association_t
-inferface_association_1_descriptor = {
-    .length = sizeof(inferface_association_1_descriptor),
-    .descriptor_type = DESCRIPTOR_TYPE_INTERFACE_ASSOCIATION,
-    .first_interface = 2,
-    .interface_count = 2,
-    .function_class = 2,
-    .function_subclass = 2,
-    .function_protocol = 1,
-    .function = 0
-};
-
-static FAR const struct usb_descriptor_interface_t
-inferface_2_descriptor = {
-    .length = sizeof(inferface_2_descriptor),
-    .descriptor_type = DESCRIPTOR_TYPE_INTERFACE,
-    .interface_number = 2,
-    .alternate_setting = 0,
-    .num_endpoints = 1,
-    .interface_class = USB_CLASS_CDC_CONTROL,
-    .interface_subclass = 2,
-    .interface_protocol = 0,
-    .interface = 0
-};
-
-static FAR const struct usb_descriptor_cdc_union_t
-cdc_union_2_descriptor = {
-    .length = sizeof(cdc_union_2_descriptor),
-    .descriptor_type = DESCRIPTOR_TYPE_CDC,
-    .sub_type = 6,
-    .master_interface = 2,
-    .slave_interface = 3
-};
-
-static FAR const struct usb_descriptor_cdc_call_management_t
-cdc_call_management_2_descriptor = {
-    .length = sizeof(cdc_call_management_2_descriptor),
-    .descriptor_type = DESCRIPTOR_TYPE_CDC,
-    .sub_type = 1,
-    .capabilities = 0x00,
-    .data_interface = 3
-};
-
-static FAR const struct usb_descriptor_endpoint_t
-endpoint_4_descriptor = {
-    .length = sizeof(endpoint_4_descriptor),
-    .descriptor_type = DESCRIPTOR_TYPE_ENDPOINT,
-    .endpoint_address = 0x84, /* EP 4 IN. */
-    .attributes = ENDPOINT_ATTRIBUTES_TRANSFER_TYPE_INTERRUPT,
-    .max_packet_size = 16,
-    .interval = 64
-};
-
-static FAR const struct usb_descriptor_interface_t
-inferface_3_descriptor = {
-    .length = sizeof(inferface_3_descriptor),
-    .descriptor_type = DESCRIPTOR_TYPE_INTERFACE,
-    .interface_number = 3,
-    .alternate_setting = 0,
-    .num_endpoints = 2,
-    .interface_class = USB_CLASS_CDC_DATA,
-    .interface_subclass = 0,
-    .interface_protocol = 0,
-    .interface = 0
-};
-
-static FAR const struct usb_descriptor_endpoint_t
-endpoint_5_descriptor = {
-    .length = sizeof(endpoint_5_descriptor),
-    .descriptor_type = DESCRIPTOR_TYPE_ENDPOINT,
-    .endpoint_address = 0x05, /* EP 5 OUT. */
-    .attributes = ENDPOINT_ATTRIBUTES_TRANSFER_TYPE_BULK,
-    .max_packet_size = 512,
-    .interval = 0
-};
-
-static FAR const struct usb_descriptor_endpoint_t
-endpoint_6_descriptor = {
-    .length = sizeof(endpoint_6_descriptor),
-    .descriptor_type = DESCRIPTOR_TYPE_ENDPOINT,
-    .endpoint_address = 0x86, /* EP 6 IN. */
-    .attributes = ENDPOINT_ATTRIBUTES_TRANSFER_TYPE_BULK,
-    .max_packet_size = 512,
-    .interval = 0
-};
-
-#endif
-
 /**
  * An array of all USB device descriptors.
  */
@@ -1053,7 +958,6 @@ FAR const union usb_descriptor_t *
 usb_device_descriptors[] = {
     (FAR const union usb_descriptor_t *)&device_descriptor,
     (FAR const union usb_descriptor_t *)&configuration_descriptor,
-    /* Interface association 0 (/dev/ttyACM0). */
     (FAR const union usb_descriptor_t *)&inferface_association_0_descriptor,
     (FAR const union usb_descriptor_t *)&inferface_0_descriptor,
     (FAR const union usb_descriptor_t *)&cdc_header_descriptor,
@@ -1064,18 +968,5 @@ usb_device_descriptors[] = {
     (FAR const union usb_descriptor_t *)&inferface_1_descriptor,
     (FAR const union usb_descriptor_t *)&endpoint_2_descriptor,
     (FAR const union usb_descriptor_t *)&endpoint_3_descriptor,
-#if CONFIG_START_CONSOLE == CONFIG_START_CONSOLE_NONE
-    /* Interface association 1 (/dev/ttyACM1). */
-    (FAR const union usb_descriptor_t *)&inferface_association_1_descriptor,
-    (FAR const union usb_descriptor_t *)&inferface_2_descriptor,
-    (FAR const union usb_descriptor_t *)&cdc_header_descriptor,
-    (FAR const union usb_descriptor_t *)&cdc_acm_descriptor,
-    (FAR const union usb_descriptor_t *)&cdc_union_2_descriptor,
-    (FAR const union usb_descriptor_t *)&cdc_call_management_2_descriptor,
-    (FAR const union usb_descriptor_t *)&endpoint_4_descriptor,
-    (FAR const union usb_descriptor_t *)&inferface_3_descriptor,
-    (FAR const union usb_descriptor_t *)&endpoint_5_descriptor,
-    (FAR const union usb_descriptor_t *)&endpoint_6_descriptor,
-#endif
     NULL
 };

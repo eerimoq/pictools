@@ -40,12 +40,6 @@ CDEFS += \
 	CONFIG_SYSTEM_TICK=0 \
 	CONFIG_CRC_TABLE_LOOKUP=0
 
-# Optimize for size.
-# OPT = -Os
-# CFLAGS += -flto
-# CXXFLAGS += -flto
-# LDFLAGS += -flto
-
 LINKER_SCRIPT ?= script.pic32tools.ld
 
 include $(SIMBA_ROOT)/make/app.mk

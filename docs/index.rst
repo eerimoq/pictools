@@ -280,7 +280,7 @@ for PIC32MM0256GPM064 can be seen below.
    Writing /home/erik/workspace/pictools/zeros.s19 to flash.
    100%|██████████████████████████| 268288/268288 [00:04<00:00, 66317.50 bytes/s]
    Write complete.
-   
+
    real    0m4.635s
    user    0m0.486s
    sys     0m0.073s
