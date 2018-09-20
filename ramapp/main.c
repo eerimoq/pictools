@@ -49,7 +49,7 @@ static struct flash_driver_t flash;
 static uint8_t buf[PAYLOAD_OFFSET + MAXIMUM_PAYLOAD_SIZE + CRC_SIZE + 2];
 
 /**
- * Faster than memcpy.
+ * Faster than memcmp.
  */
 static int cmp32(uint32_t *b1_p, uint32_t *b2_p, size_t size)
 {

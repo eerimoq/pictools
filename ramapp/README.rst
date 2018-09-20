@@ -26,7 +26,7 @@ This is the packet format:
       2         8         0  Erase flash.
       3         8         n  Read from flash.
       4       8+n         0  Write to flash.
-    106        12         0  Row write to flash.
+    106        12         0  Fast write to flash.
 
 Command failure
 ^^^^^^^^^^^^^^^
