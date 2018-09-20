@@ -6,7 +6,7 @@ import bincopy
 
 def run(command, timed=False):
     command = command.split(' ')
-    command = ['python3', '-m', 'pictools', '-p', '/dev/ttyACM1'] + command
+    command = ['python3', '-m', 'pictools', '-p', '/dev/arduino'] + command
 
     if timed:
         command = ['/usr/bin/env', 'bash', '-c',

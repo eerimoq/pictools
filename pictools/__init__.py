@@ -340,7 +340,15 @@ def serial_open_ensure_connected(port):
     try:
         connect(serial_connection)
     except CommandFailedError as e:
-        if e.error != -106:
+        if e.error == -106:
+            pass
+        elif e.error == -71:
+            execute_command(serial_connection, PROGRAMMER_COMMAND_TYPE_RESET)
+
+            print('Resetted PIC.')
+
+            connect(serial_connection)
+        else:
             raise
 
     ping(serial_connection)

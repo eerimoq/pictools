@@ -59,10 +59,10 @@ Installation
    .. code-block:: text
 
       > pictools --port /dev/arduino programmer_upload
-      Uploading programmer application version 0.5.0.
+      Uploading programmer application version 0.6.0.
       Erase flash
-      Write 22040 bytes to flash
-      [==============================] 100% (87/87 pages)
+      Write 23248 bytes to flash
+      [==============================] 100% (91/91 pages)
       Set boot flash true
       CPU reset.
       Upload complete.
@@ -88,11 +88,12 @@ erase and read back verify operations.
 
    > pictools --port /dev/arduino flash_write --chip-erase hello_world.s19
    Programmer is alive.
+   Resetted PIC.
    Erasing the chip.
    Chip erase complete.
    Connected to PIC.
    Writing /home/erik/workspace/pictools/hello_world.s19 to flash.
-   100%|████████████████████████████| 12052/12052 [00:00<00:00, 30706.41 bytes/s]
+   100%|████████████████████████████| 12052/12052 [00:00<00:00, 65081.89 bytes/s]
    Write complete.
 
 Read from flash
@@ -106,7 +107,7 @@ Read from the flash memory.
    Programmer is alive.
    PIC is alive.
    Reading 0x1d000000-0x1d001000.
-   100%|██████████████████████████████| 4096/4096 [00:00<00:00, 22741.75 bytes/s]
+   100%|██████████████████████████████| 4096/4096 [00:00<00:00, 60882.44 bytes/s]
    Read complete.
 
 Read the whole flash
@@ -120,13 +121,13 @@ Read program flash, boot flash and configuration memory.
    Programmer is alive.
    PIC is alive.
    Reading 0x1d000000-0x1d040000.
-   100%|██████████████████████████| 262144/262144 [00:11<00:00, 22596.37 bytes/s]
+   100%|██████████████████████████| 262144/262144 [00:04<00:00, 61062.96 bytes/s]
    Read complete.
    Reading 0x1fc00000-0x1fc01700.
-   100%|██████████████████████████████| 5888/5888 [00:00<00:00, 22523.02 bytes/s]
+   100%|██████████████████████████████| 5888/5888 [00:00<00:00, 59621.36 bytes/s]
    Read complete.
    Reading 0x1fc01700-0x1fc01800.
-   100%|████████████████████████████████| 256/256 [00:00<00:00, 16924.51 bytes/s]
+   100%|████████████████████████████████| 256/256 [00:00<00:00, 54662.82 bytes/s]
    Read complete.
 
 Erase a flash range
@@ -272,17 +273,17 @@ for PIC32MM0256GPM064 can be seen below.
 
    > time pictools -p /dev/arduino -m pic32mm0256gpm064 flash_write -c zeros.s19
    Programmer is alive.
+   Resetted PIC.
    Erasing the chip.
    Chip erase complete.
    Connected to PIC.
    Writing /home/erik/workspace/pictools/zeros.s19 to flash.
-   100%|██████████████████████████| 268288/268288 [00:06<00:00, 40706.99 bytes/s]
+   100%|██████████████████████████| 268288/268288 [00:04<00:00, 66317.50 bytes/s]
    Write complete.
-
-   real	0m7.255s
-   user	0m0.359s
-   sys	0m0.027s
-   >
+   
+   real    0m4.635s
+   user    0m0.486s
+   sys     0m0.073s
 
 +-------------------+-------------+------------+----------------------------+
 | MCU               | Memory size | Write time | Comment                    |
@@ -309,7 +310,7 @@ for PIC32MM0256GPM064 can be seen below.
 +-------------------+-------------+------------+----------------------------+
 | PIC32MM0128GPM064 |        134k | Not tested |                            |
 +-------------------+-------------+------------+----------------------------+
-| PIC32MM0256GPM064 |        262k |      7.2 s |                            |
+| PIC32MM0256GPM064 |        262k |      4.6 s |                            |
 +-------------------+-------------+------------+----------------------------+
 
 Similar projects
