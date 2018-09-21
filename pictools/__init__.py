@@ -20,6 +20,7 @@ import serial
 import binascii
 import bincopy
 import subprocess
+from distutils.spawn import find_executable
 from tqdm import tqdm
 import bitstruct
 
@@ -809,9 +810,20 @@ def do_programmer_upload(args):
     if args.unlock:
         command.append('-u')
 
+    if args.bossac_path is not None:
+        os.environ['PATH'] = args.bossac_path + os.pathsep + os.environ['PATH']
+
+    # Make sure bossac is found.
+    if find_executable('bossac') is None:
+        raise Exception(
+            "error: 'programmer_upload' requires that 'bossac' is installed on "
+            "the host machine. Please install it in PATH, or give '--bossac-path' "
+            "with its location in the file system.")
+
     subprocess.check_call(command)
 
     print('Upload complete.')
+
 
 def do_generate_ramapp_upload_instructions(args):
     instructions = []
@@ -1020,6 +1032,8 @@ def _main():
     subparser.add_argument('-u', '--unlock',
                            action='store_true',
                            help='Unlock memory protection bits (give -u to bossac).')
+    subparser.add_argument('-b', '--bossac-path',
+                           help='Path to bossac if not installed in PATH.')
     subparser.set_defaults(func=do_programmer_upload)
 
     subparser = subparsers.add_parser(

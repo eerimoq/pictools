@@ -54,7 +54,9 @@ Installation
       pip install pictools
 
 #. Upload the programmer application to the Arduino Due. This requires
-   that ``bossac`` is already installed on the host machine.
+   that ``bossac`` is already installed on the host machine. Add the
+   ``--bossac-path`` option if ``bossac`` is not installed in
+   ``PATH``, but in a custom location in the file system.
 
    .. code-block:: text
 
