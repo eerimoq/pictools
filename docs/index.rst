@@ -27,8 +27,13 @@ Hardware setup
    :target: _images/hardware-setup.jpg
 
 The programmer (to the right) connected to a PC with serial over
-USB. The DEF CON 26 Badge (to the left) with PIC32MM MCU to be
-programmed.
+USB. The DEF CON 26 Badge (to the left)
+with PIC32MM MCU to be programmed.
+
+.. note:: The native USB port on the Arduino Due is used when
+          programming the PIC, not the programming port as in the
+          picture. The programming port is only used when programming
+          the programmer.
 
 +-----------+--------+---------------+
 | Signal    | Color  | Arduino pin   |
@@ -53,6 +58,8 @@ Installation
 
       pip install pictools
 
+#. Connect the Arduino Due programming USB port to the PC.
+
 #. Upload the programmer application to the Arduino Due. This requires
    that ``bossac`` is already installed on the host machine. Add the
    ``--bossac-path`` option if ``bossac`` is not installed in
@@ -72,6 +79,12 @@ Installation
    If necessary, give ``-u`` to the upload command above to unlock any
    locked flash regions.
 
+#. Connect the Arduino Due native USB port to the PC.
+
+#. Reset the Arduino Due.
+
+#. Done!
+   
 Command line tool
 =================
 
