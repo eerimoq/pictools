@@ -981,7 +981,7 @@ def do_generate_ramapp_upload_instructions(args):
             '\n'.join(['{}, /* {} */'.format(*i) for i in instructions])))
 
 
-def _main():
+def main():
     description = (
         "Erase, read from and write to PIC flash memory, and more. Uploads "
         "the RAM application to the PIC RAM over ICSP, which in turn accesses "

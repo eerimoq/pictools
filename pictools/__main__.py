@@ -1,5 +1,5 @@
 # Execute as "python -m pictools"
 
-from . import _main as main
+from . import main
 
 main()
