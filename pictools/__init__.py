@@ -1,13 +1,13 @@
 """Erase, read from and write to PIC flash memory. Uploads the PE to
 SRAM using ICSP, which in turn accesses the flash memory.
 
-                   +---------------+
- +------+          |               |          +---------+
- |      |   UART   |  Programmer   |   ICSP   |         |
- |  PC  o----------o               o----------o   PIC   |
- |      |          | (Arduino Due) |          |         |
- +------+          |               |          +---------+
-                   +---------------+
+                  +---------------+
+ +------+         |               |          +---------+
+ |      |   USB   |  Programmer   |   ICSP   |         |
+ |  PC  o---------o               o----------o   PIC   |
+ |      |         | (Arduino Due) |          |         |
+ +------+         |               |          +---------+
+                  +---------------+
 
 """
 
