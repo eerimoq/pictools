@@ -1,3 +1,6 @@
+|buildstatus|_
+|coverage|_
+
 About
 =====
 
@@ -12,6 +15,12 @@ Features:
 Project homepage: https://github.com/eerimoq/pictools
 
 Documentation: http://pictools.readthedocs.org/en/latest
+
+.. |buildstatus| image:: https://travis-ci.org/eerimoq/pictools.svg?branch=master
+.. _buildstatus: https://travis-ci.org/eerimoq/pictools
+
+.. |coverage| image:: https://coveralls.io/repos/github/eerimoq/pictools/badge.svg?branch=master
+.. _coverage: https://coveralls.io/github/eerimoq/pictools
 
 .. _Arduino Due: https://store.arduino.cc/arduino-due
 

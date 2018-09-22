@@ -9,6 +9,9 @@
 Welcome to the PIC tools documentation!
 =======================================
 
+|buildstatus|_
+|coverage|_
+
 `PIC tools` is a collection of tools to ease PIC software
 development. PIC is family of microcontrollers made by `Microchip`_.
 
@@ -381,6 +384,12 @@ of them:
 - https://github.com/G4me4u/pic-programmer-arduino
 
 - https://github.com/rweather/ardpicprog
+
+.. |buildstatus| image:: https://travis-ci.org/eerimoq/pictools.svg?branch=master
+.. _buildstatus: https://travis-ci.org/eerimoq/pictools
+
+.. |coverage| image:: https://coveralls.io/repos/github/eerimoq/pictools/badge.svg?branch=master
+.. _coverage: https://coveralls.io/github/eerimoq/pictools
 
 .. _programmer/dist: https://github.com/eerimoq/pictools/tree/master/programmer/dist
 
