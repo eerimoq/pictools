@@ -20,7 +20,6 @@ setup(name='pictools',
       license='MIT',
       classifiers=[
           'License :: OSI Approved :: MIT License',
-          'Programming Language :: Python :: 2',
           'Programming Language :: Python :: 3',
       ],
       keywords=['pic', 'pic32', 'programmer'],

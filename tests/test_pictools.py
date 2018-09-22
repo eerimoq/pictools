@@ -17,12 +17,20 @@ import pictools
 import serial
 
 
-def ping_read():
+def programmer_ping_read():
     return [b'\x00\x64\x00\x00', b'\xc3\x6b']
 
 
-def ping_write():
+def programmer_ping_write():
     return ((b'\x00\x64\x00\x00\xc3\x6b', ), )
+
+
+def connect_read():
+    return [b'\x00\x65\x00\x00', b'\xf4\x5b']
+
+
+def connect_write():
+    return ((b'\x00\x65\x00\x00\xf4\x5b', ), )
 
 
 def disconnect_read():
@@ -41,14 +49,25 @@ def reset_write():
     return ((b'\x00\x67\x00\x00\x9a\x3b', ), )
 
 
+def ping_read():
+    return [b'\x00\x01\x00\x00', b'\xb3\xf0']
+
+
+def ping_write():
+    return ((b'\x00\x01\x00\x00\xb3\xf0', ), )
+
+
 class PicToolsTest(unittest.TestCase):
 
+    def setUp(self):
+        serial.Serial.reset_mock()
+    
     def test_reset(self):
         argv = ['pictools', 'reset']
 
         stdout = StringIO()
         serial.Serial.read.side_effect = [
-            *ping_read(),
+            *programmer_ping_read(),
             *disconnect_read(),
             *reset_read()
         ]
@@ -66,12 +85,42 @@ PIC reset.
         self.assertEqual(actual_output, expected_output)
 
         expected_writes = [
-            ping_write(),
+            programmer_ping_write(),
             disconnect_write(),
             reset_write()
         ]
-        actual_writes = serial.Serial.write.call_args_list
-        self.assertEqual(actual_writes, expected_writes)
+        self.assertEqual(serial.Serial.write.call_args_list,
+                         expected_writes)
+
+    def test_ping(self):
+        argv = ['pictools', 'ping']
+
+        stdout = StringIO()
+        serial.Serial.read.side_effect = [
+            *programmer_ping_read(),
+            *connect_read(),
+            *ping_read()
+        ]
+
+        with patch('sys.stdout', stdout):
+            with patch('sys.argv', argv):
+                pictools.main()
+
+        expected_output = """\
+Programmer is alive.
+Connected to PIC.
+PIC is alive.
+"""
+        actual_output = stdout.getvalue()
+        self.assertEqual(actual_output, expected_output)
+
+        expected_writes = [
+            programmer_ping_write(),
+            connect_write(),
+            ping_write()
+        ]
+        self.assertEqual(serial.Serial.write.call_args_list,
+                         expected_writes)
 
 
 if __name__ == '__main__':
