@@ -9,8 +9,8 @@
 Welcome to the PIC tools documentation!
 =======================================
 
-`PIC tools` is a collection of tools to ease PIC development. PIC is
-family of microcontrollers made by `Microchip`_.
+`PIC tools` is a collection of tools to ease PIC software
+development. PIC is family of microcontrollers made by `Microchip`_.
 
 Features:
 
@@ -30,7 +30,7 @@ The programmer (to the right) connected to a PC with serial over
 USB. The DEF CON 26 Badge (to the left)
 with PIC32MM MCU to be programmed.
 
-.. note:: The native USB port on the Arduino Due is used when
+.. note:: The native USB port on the `Arduino Due`_ is used when
           programming the PIC, not the programming port as in the
           picture. The programming port is only used when programming
           the programmer.
@@ -58,9 +58,9 @@ Installation
 
       pip install pictools
 
-#. Connect the Arduino Due programming USB port to the PC.
+#. Connect the `Arduino Due`_ programming USB port to the PC.
 
-#. Upload the programmer application to the Arduino Due.
+#. Upload the programmer application to the `Arduino Due`_.
 
    Ubuntu:
 
@@ -70,8 +70,8 @@ Installation
 
          > sudo apt install bossa-cli
 
-   #. Upload the programmer binary to the Arduino Due. Change serial
-      port to match your setup.
+   #. Upload the programmer binary to the `Arduino Due`_. Change
+      serial port to match your setup.
 
       .. code-block:: text
 
@@ -94,7 +94,7 @@ Installation
    #. Install `Arduino SAM Boards`.
 
    #. Open a Windows PowerShell and upload the programmer binary to
-      the Arduino Due. Change serial port and bossac path to match
+      the `Arduino Due`_. Change serial port and bossac path to match
       your setup.
 
       .. code-block:: text
@@ -111,9 +111,9 @@ Installation
    If necessary, give ``-u`` to the upload command above to unlock any
    locked flash regions.
 
-#. Connect the Arduino Due native USB port to the PC.
+#. Connect the `Arduino Due`_ native USB port to the PC.
 
-#. Reset the Arduino Due.
+#. Reset the `Arduino Due`_.
 
 #. Done!
 

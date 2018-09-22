@@ -1,8 +1,8 @@
 About
 =====
 
-`PIC tools` is a collection of tools to ease PIC development. PIC is
-family of microcontrollers made by `Microchip`_.
+`PIC tools` is a collection of tools to ease PIC software
+development. PIC is family of microcontrollers made by `Microchip`_.
 
 Features:
 
