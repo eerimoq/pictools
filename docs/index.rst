@@ -27,8 +27,8 @@ Hardware setup
    :target: _images/hardware-setup.jpg
 
 The programmer (to the right) connected to a PC with serial over
-USB. The DEF CON 26 Badge (to the left)
-with PIC32MM MCU to be programmed.
+USB. The DEF CON 26 Badge (to the left) with a PIC32MM MCU to be
+programmed.
 
 .. note:: The native USB port on the `Arduino Due`_ is used when
           programming the PIC, not the programming port as in the
@@ -113,7 +113,7 @@ Installation
 
 #. Connect the `Arduino Due`_ native USB port to the PC.
 
-#. Reset the `Arduino Due`_.
+#. Reset the `Arduino Due`_ by pressing its reset button.
 
 #. Done!
 
