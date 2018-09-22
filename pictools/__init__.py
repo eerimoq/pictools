@@ -280,9 +280,6 @@ class Serial(serial.Serial):
         self._input_buffer = b''
 
     def read(self, size=1):
-        if size <= 0:
-            return b''
-
         data = self._input_buffer[:size]
         self._input_buffer = self._input_buffer[size:]
 
@@ -477,13 +474,10 @@ def execute_command(serial_connection, command_type, payload=None):
     sys.exit('Communication failure.')
 
 
-def send_command(serial_connection, command_type, payload=None):
+def send_command(serial_connection, command_type, payload):
     """Send given command.
 
     """
-
-    if payload is None:
-        payload = b''
 
     packet_write(serial_connection, command_type, payload)
 
