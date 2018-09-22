@@ -403,9 +403,9 @@ def packet_write(serial_connection, command_type, payload):
     """
 
     header = struct.pack('>HH', command_type, len(payload))
-    footer = struct.pack('>H', crc_ccitt(header + payload))
+    crc = struct.pack('>H', crc_ccitt(header + payload))
 
-    serial_connection.write(header + payload + footer)
+    serial_connection.write(header + payload + crc)
 
 
 def packet_read(serial_connection):
@@ -416,7 +416,7 @@ def packet_read(serial_connection):
     header = serial_connection.read(4)
 
     if len(header) != 4:
-        print('error: failed to read packet header')
+        print('error: timeout reading packet header')
 
         return None, None
 
@@ -434,14 +434,14 @@ def packet_read(serial_connection):
     else:
         payload = b''
 
-    footer = serial_connection.read(2)
+    crc = serial_connection.read(2)
 
-    if len(footer) != 2:
-        print('error: failed to read packet footer')
+    if len(crc) != 2:
+        print('error: failed to read packet crc')
 
         return None, None
 
-    actual_crc = struct.unpack('>H', footer)[0]
+    actual_crc = struct.unpack('>H', crc)[0]
     expected_crc = crc_ccitt(header + payload)
 
     if actual_crc != expected_crc:
@@ -462,18 +462,17 @@ def execute_command(serial_connection, command_type, payload=None):
     if payload is None:
         payload = b''
 
-    for _ in range(3):
-        packet_write(serial_connection, command_type, payload)
-        response_command_type, response_payload = packet_read(serial_connection)
+    packet_write(serial_connection, command_type, payload)
+    response_command_type, response_payload = packet_read(serial_connection)
 
-        if response_command_type == command_type:
-            return response_payload
-        elif response_command_type == COMMAND_TYPE_FAILED:
-            error = struct.unpack('>i', response_payload)[0]
+    if response_command_type == command_type:
+        return response_payload
+    elif response_command_type == COMMAND_TYPE_FAILED:
+        error = struct.unpack('>i', response_payload)[0]
 
-            raise CommandFailedError(error)
-
-    sys.exit('Communication failure.')
+        raise CommandFailedError(error)
+    else:
+        sys.exit('error: failed to execute programmer command')
 
 
 def send_command(serial_connection, command_type, payload):
@@ -498,7 +497,7 @@ def receive_command(serial_connection, command_type):
 
         raise CommandFailedError(error)
 
-    sys.exit('Communication failure.')
+    sys.exit('error: no programmer command response recieved')
 
 
 def assert_receive_failure(serial_connection):
@@ -513,7 +512,8 @@ def assert_receive_failure(serial_connection):
 
         raise CommandFailedError(error)
 
-    sys.exit('Communication failure.')
+    sys.exit('error: expected command to fail, but got successful response '
+             'for command {}'.format(response_command_type))
 
 
 def read_to_file(serial_connection, ranges, outfile):
@@ -785,7 +785,7 @@ def do_flash_write(args):
 
                 if bytearray(read_data) != data:
                     sys.exit(
-                        'Verify failed at address 0x{:x}.'.format(address))
+                        'error: verify failed at address 0x{:x}'.format(address))
 
                 progress.update(len(data))
 
