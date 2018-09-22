@@ -25,7 +25,7 @@ from tqdm import tqdm
 import bitstruct
 
 
-__version__ = '0.12.0'
+__version__ = '0.13.0'
 
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -62,7 +62,8 @@ PROGRAMMER_COMMAND_TYPE_FAST_WRITE    =  106
 ERASE_TIMEOUT = 5
 SERIAL_TIMEOUT = 1
 
-READ_WRITE_CHUNK_SIZE = 504
+READ_CHUNK_SIZE = 504
+FAST_WRITE_SIZE = 256
 
 PROGRAM_FLASH_ADDRESS       = 0x1d000000
 PROGRAM_FLASH_SIZE          = 0x00040000
@@ -525,8 +526,8 @@ def read_to_file(serial_connection, ranges, outfile):
 
         with tqdm(total=left, unit=' bytes') as progress:
             while left > 0:
-                if left > READ_WRITE_CHUNK_SIZE:
-                    size = READ_WRITE_CHUNK_SIZE
+                if left > READ_CHUNK_SIZE:
+                    size = READ_CHUNK_SIZE
                 else:
                     size = left
 
@@ -679,8 +680,8 @@ def create_chunks(binfile):
                     address,
                     size))
 
-        if (address % 256) != 0:
-            offset = (256 - (address % 256))
+        if (address % FAST_WRITE_SIZE) != 0:
+            offset = (FAST_WRITE_SIZE - (address % FAST_WRITE_SIZE))
 
             if offset > size:
                 offset = size
@@ -690,8 +691,8 @@ def create_chunks(binfile):
         else:
             offset = 0
 
-        number_of_fast_chunks = ((size - offset) // 256)
-        fast_chunk_size = (256 * number_of_fast_chunks)
+        number_of_fast_chunks = ((size - offset) // FAST_WRITE_SIZE)
+        fast_chunk_size = (FAST_WRITE_SIZE * number_of_fast_chunks)
 
         if fast_chunk_size > 0:
             fast_chunk = (address + offset, data[offset:offset + fast_chunk_size])
@@ -757,15 +758,15 @@ def do_flash_write(args):
             send_command(serial_connection,
                          PROGRAMMER_COMMAND_TYPE_FAST_WRITE,
                          header)
-            serial_connection.write(data[:256])
+            serial_connection.write(data[:FAST_WRITE_SIZE])
 
-            for offset in range(256, len(data), 256):
-                serial_connection.write(data[offset:offset + 256])
+            for offset in range(FAST_WRITE_SIZE, len(data), FAST_WRITE_SIZE):
+                serial_connection.write(data[offset:offset + FAST_WRITE_SIZE])
                 receive_fast_write_ack(serial_connection)
-                progress.update(256)
+                progress.update(FAST_WRITE_SIZE)
 
             receive_fast_write_ack(serial_connection)
-            progress.update(256)
+            progress.update(FAST_WRITE_SIZE)
             receive_command(serial_connection, PROGRAMMER_COMMAND_TYPE_FAST_WRITE)
 
     print('Write complete.')
@@ -774,7 +775,7 @@ def do_flash_write(args):
         print('Verifying written data.')
 
         with tqdm(total=total, unit=' bytes') as progress:
-            for address, data in binfile.segments.chunks(READ_WRITE_CHUNK_SIZE):
+            for address, data in binfile.segments.chunks(READ_CHUNK_SIZE):
                 address = physical_flash_address(address)
                 payload = struct.pack('>II', address, len(data))
                 read_data = execute_command(serial_connection,

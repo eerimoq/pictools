@@ -32,7 +32,7 @@
 
 NAME = programmer
 BOARD ?= arduino_due
-VERSION ?= 0.6.0
+VERSION ?= 0.7.0
 
 RAMAPP_UPLOAD_INSTRUCTIONS_I = programmer/ramapp_upload_instructions.i
 RAMAPP_OUT = ramapp/build/defcon26_badge/ramapp.out
