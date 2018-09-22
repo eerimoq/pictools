@@ -325,8 +325,7 @@ def format_error(error):
 def flash_ranges(mcu):
     return [
         (PROGRAM_FLASH_ADDRESS, PROGRAM_FLASH_SIZE_KB[mcu] * 1024),
-        (BOOT_FLASH_ADDRESS, BOOT_FLASH_SIZE),
-        (CONFIGURATION_BITS_ADDRESS, CONFIGURATION_BITS_SIZE),
+        (BOOT_FLASH_ADDRESS, BOOT_FLASH_SIZE + CONFIGURATION_BITS_SIZE)
     ]
 
 

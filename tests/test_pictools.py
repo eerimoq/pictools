@@ -81,17 +81,26 @@ def flash_write_write(address, size, data, crc):
     return ((header + payload + footer, ), )
 
 
-def flash_read_read(data, crc):
+def flash_read_read(data, crc=None):
+    header = b'\x00\x03' + struct.pack('>H', len(data))
+    
+    if crc is None:
+        crc = pictools.crc_ccitt(header + data)
+        
     return [
-        b'\x00\x03' + struct.pack('>H', len(data)),
+        header,
         data,
         struct.pack('>H', crc)
     ]
 
 
-def flash_read_write(address, size, crc):
+def flash_read_write(address, size, crc=None):
     payload = struct.pack('>II', address, size)
     header = b'\x00\x03' + struct.pack('>H', len(payload))
+    
+    if crc is None:
+        crc = pictools.crc_ccitt(header + payload)
+
     footer = struct.pack('>H', crc)
 
     return ((header + payload + footer, ), )
@@ -304,6 +313,48 @@ class PicToolsTest(unittest.TestCase):
         self.assert_calls(serial.Serial.write.call_args_list,
                           expected_writes)
 
+    def test_flash_read_all(self):
+        argv = ['pictools', 'flash_read_all', 'test_flash_read_all.s19']
+
+        binfile = bincopy.BinFile('tests/files/test_flash_read_all.s19')
+        flash_read_reads = []
+
+        for _, data in binfile.segments.chunks(504):
+            flash_read_reads += flash_read_read(data)
+            
+        serial.Serial.read.side_effect = [
+            *programmer_ping_read(),
+            *connect_read(),
+            *ping_read(),
+            *flash_read_reads
+        ]
+
+        with patch('sys.argv', argv):
+            pictools.main()
+
+        flash_read_writes = []
+
+        for address, data in binfile.segments.chunks(504):
+            flash_read_writes.append(flash_read_write(address, len(data)))
+
+        expected_writes = [
+            programmer_ping_write(),
+            connect_write(),
+            ping_write(),
+            *flash_read_writes
+        ]
+
+        self.assert_calls(serial.Serial.write.call_args_list,
+                          expected_writes)
+
+        with open('test_flash_read_all.s19', 'r') as fin:
+            actual = fin.read()
+
+        with open('tests/files/test_flash_read_all.s19', 'r') as fin:
+            expected = fin.read()
+
+        self.assertEqual(actual, expected)
+            
     def test_generate_ramapp_upload_instructions(self):
         argv = [
             'pictools',
