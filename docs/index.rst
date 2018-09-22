@@ -68,7 +68,7 @@ Installation
    .. code-block:: text
 
       > pictools --port /dev/arduino programmer_upload
-      Uploading programmer application version 0.6.0.
+      Uploading programmer application version 0.7.0.
       Erase flash
       Write 23248 bytes to flash
       [==============================] 100% (91/91 pages)
