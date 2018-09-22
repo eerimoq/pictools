@@ -1,5 +1,6 @@
 import sys
 import unittest
+from unittest.mock import Mock
 import bincopy
 import struct
 import binascii
@@ -195,10 +196,12 @@ class PicToolsTest(unittest.TestCase):
                           expected_writes)
 
     def test_flash_write_chip_erase(self):
-        argv = ['pictools',
-                'flash_write',
-                '--chip-erase',
-                'test_flash_write.s19']
+        argv = [
+            'pictools',
+            'flash_write',
+            '--chip-erase',
+            'test_flash_write.s19'
+        ]
 
         serial.Serial.read.side_effect = [
             *programmer_ping_read(),
@@ -261,10 +264,12 @@ class PicToolsTest(unittest.TestCase):
                           expected_writes)
 
     def test_flash_write_verify(self):
-        argv = ['pictools',
-                'flash_write',
-                '--verify',
-                'test_flash_write.s19']
+        argv = [
+            'pictools',
+            'flash_write',
+            '--verify',
+            'test_flash_write.s19'
+        ]
 
         serial.Serial.read.side_effect = [
             *programmer_ping_read(),
@@ -292,6 +297,30 @@ class PicToolsTest(unittest.TestCase):
 
         self.assert_calls(serial.Serial.write.call_args_list,
                           expected_writes)
+
+    def test_generate_ramapp_upload_instructions(self):
+        argv = [
+            'pictools',
+            'generate_ramapp_upload_instructions',
+            'tests/files/ramapp.out',
+            'test_generate_ramapp_upload_instructions.i'
+        ]
+
+        with open('tests/files/ramapp.dis', 'rb') as fin:
+            check_output = Mock(return_value=fin.read())
+
+            with patch('subprocess.check_output', check_output):
+                with patch('sys.argv', argv):
+                    pictools.main()
+
+        with open('tests/files/ramapp.i', 'r') as fin:
+            expected = fin.read()
+            expected = expected.format(pictools.__version__)
+
+        with open('test_generate_ramapp_upload_instructions.i', 'r') as fin:
+            actual = fin.read()
+
+        self.assertEqual(actual, expected)
 
 
 if __name__ == '__main__':
