@@ -58,3 +58,4 @@ target/
 memory.s19
 data.s19
 zeros.s19
+test_flash_write.s19

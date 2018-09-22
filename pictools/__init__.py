@@ -443,10 +443,13 @@ def packet_read(serial_connection):
 
         return None, None
 
-    crc = struct.unpack('>H', footer)[0]
+    actual_crc = struct.unpack('>H', footer)[0]
+    expected_crc = crc_ccitt(header + payload)
 
-    if crc != crc_ccitt(header + payload):
-        print('error: crc mismatch of received packet')
+    if actual_crc != expected_crc:
+        print('error: expected received packet crc 0x{:04x}, but '
+              'got 0x{:04x}'.format(expected_crc,
+                                    actual_crc))
 
         return None, None
 
