@@ -76,7 +76,35 @@ def flash_write_write(address, size, data, crc):
     payload = struct.pack('>II', address, size) + data
     header = b'\x00\x04' + struct.pack('>H', len(payload))
     footer = struct.pack('>H', crc)
-    
+
+    return ((header + payload + footer, ), )
+
+
+def flash_read_read(data, crc):
+    return [
+        b'\x00\x03' + struct.pack('>H', len(data)),
+        data,
+        struct.pack('>H', crc)
+    ]
+
+
+def flash_read_write(address, size, crc):
+    payload = struct.pack('>II', address, size)
+    header = b'\x00\x03' + struct.pack('>H', len(payload))
+    footer = struct.pack('>H', crc)
+
+    return ((header + payload + footer, ), )
+
+
+def flash_write_fast_read():
+    return [b'\x00\x6a\x00\x00', b'\xd8\x6a']
+
+
+def flash_write_fast_write(address, size, data_crc, crc):
+    payload = struct.pack('>III', address, size, data_crc)
+    header = b'\x00\x6a' + struct.pack('>H', len(payload))
+    footer = struct.pack('>H', crc)
+
     return ((header + payload + footer, ), )
 
 
@@ -88,14 +116,16 @@ class PicToolsTest(unittest.TestCase):
     def assert_calls(self, actual_args, expected_args):
         def cformat(value):
             return binascii.hexlify(value).decode('ascii')
-            
+
+        self.assertEqual(len(actual_args), len(expected_args))
+
         for actual, expected in zip(actual_args, expected_args):
             if actual != expected:
                 print('Expected: {}'.format(cformat(expected[0][0])))
                 print('Actual:   {}'.format(cformat(actual[0][0])))
 
             self.assertEqual(actual, expected)
-        
+
     def test_reset(self):
         argv = ['pictools', 'reset']
 
@@ -150,7 +180,7 @@ class PicToolsTest(unittest.TestCase):
             binfile = bincopy.BinFile()
             binfile.add_binary(b'\x00', 0x1d000000)
             fout.write(binfile.as_srec())
-        
+
         with patch('sys.argv', argv):
             pictools.main()
 
@@ -183,7 +213,7 @@ class PicToolsTest(unittest.TestCase):
             binfile = bincopy.BinFile()
             binfile.add_binary(b'\x12', 0x1d000004)
             fout.write(binfile.as_srec())
-        
+
         with patch('sys.argv', argv):
             pictools.main()
 
@@ -194,6 +224,70 @@ class PicToolsTest(unittest.TestCase):
             flash_erase_chip_write(),
             connect_write(),
             flash_write_write(0x1d000004, 1, b'\x12', 0x0af8)
+        ]
+
+        self.assert_calls(serial.Serial.write.call_args_list,
+                          expected_writes)
+
+    def test_flash_write_fast(self):
+        argv = ['pictools', 'flash_write', 'test_flash_write.s19']
+
+        chunk = bytearray(range(256))
+        serial.Serial.read.side_effect = [
+            *programmer_ping_read(),
+            *connect_read(),
+            *ping_read(),
+            b'\x00\x00',
+            *flash_write_fast_read()
+        ]
+
+        with open('test_flash_write.s19', 'w') as fout:
+            binfile = bincopy.BinFile()
+            binfile.add_binary(chunk, 0x1d000000)
+            fout.write(binfile.as_srec())
+
+        with patch('sys.argv', argv):
+            pictools.main()
+
+        expected_writes = [
+            programmer_ping_write(),
+            connect_write(),
+            ping_write(),
+            flash_write_fast_write(0x1d000000, 256, 0x3fbd, 0xbd58),
+            ((chunk, ), )
+        ]
+
+        self.assert_calls(serial.Serial.write.call_args_list,
+                          expected_writes)
+
+    def test_flash_write_verify(self):
+        argv = ['pictools',
+                'flash_write',
+                '--verify',
+                'test_flash_write.s19']
+
+        serial.Serial.read.side_effect = [
+            *programmer_ping_read(),
+            *connect_read(),
+            *ping_read(),
+            *flash_write_read(),
+            *flash_read_read(b'\x00', 0xb9e1)
+        ]
+
+        with open('test_flash_write.s19', 'w') as fout:
+            binfile = bincopy.BinFile()
+            binfile.add_binary(b'\x00', 0x1d000000)
+            fout.write(binfile.as_srec())
+
+        with patch('sys.argv', argv):
+            pictools.main()
+
+        expected_writes = [
+            programmer_ping_write(),
+            connect_write(),
+            ping_write(),
+            flash_write_write(0x1d000000, 1, b'\x00', 0x3e2a),
+            flash_read_write(0x1d000000, 1, 0xae0d)
         ]
 
         self.assert_calls(serial.Serial.write.call_args_list,
