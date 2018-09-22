@@ -11,6 +11,7 @@ SRAM using ICSP, which in turn accesses the flash memory.
 
 """
 
+import time
 import os
 import sys
 import re
@@ -25,7 +26,7 @@ from tqdm import tqdm
 import bitstruct
 
 
-__version__ = '0.13.0'
+__version__ = '0.13.1'
 
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -839,6 +840,7 @@ def do_programmer_upload(args):
     # Enter software upload mode.
     serial_connection = serial.Serial(args.port, 1200)
     serial_connection.close()
+    time.sleep(2)
 
     # Upload the software.
     port = args.port.replace('/dev/', '')
