@@ -60,21 +60,53 @@ Installation
 
 #. Connect the Arduino Due programming USB port to the PC.
 
-#. Upload the programmer application to the Arduino Due. This requires
-   that ``bossac`` is already installed on the host machine. Add the
-   ``--bossac-path`` option if ``bossac`` is not installed in
-   ``PATH``, but in a custom location in the file system.
+#. Upload the programmer application to the Arduino Due.
 
-   .. code-block:: text
+   Ubuntu:
 
-      > pictools --port /dev/arduino programmer_upload
-      Uploading programmer application version 0.7.0.
-      Erase flash
-      Write 23248 bytes to flash
-      [==============================] 100% (91/91 pages)
-      Set boot flash true
-      CPU reset.
-      Upload complete.
+   #. Install bossac.
+
+      .. code-block:: text
+
+         > sudo apt install bossa-cli
+
+   #. Upload the programmer binary to the Arduino Due. Change serial
+      port to match your setup.
+
+      .. code-block:: text
+
+         > pictools --port /dev/arduino programmer_upload
+         Uploading programmer application version 0.7.0.
+         Erase flash
+         Write 23248 bytes to flash
+         [==============================] 100% (91/91 pages)
+         Set boot flash true
+         CPU reset.
+         Upload complete.
+
+   Windows:
+
+   #. Install the `Arduino IDE`_.
+
+   #. Start the `Arduino IDE`_ and click "Tools" -> "Board:" ->
+      "Boards Manager...".
+
+   #. Install `Arduino SAM Boards`.
+
+   #. Open a Windows PowerShell and upload the programmer binary to
+      the Arduino Due. Change serial port and bossac path to match
+      your setup.
+
+      .. code-block:: text
+
+         > pictools --port COM5 programmer_upload --bossac-path 'c:\Users\erik\Documents\ArduinoData\packages\arduino\tools\bossac\1.6.1-arduino'
+         Uploading programmer application version 0.7.0.
+         Erase flash
+         Write 23248 bytes to flash
+         [==============================] 100% (91/91 pages)
+         Set boot flash true
+         CPU reset.
+         Upload complete.
 
    If necessary, give ``-u`` to the upload command above to unlock any
    locked flash regions.
@@ -84,7 +116,7 @@ Installation
 #. Reset the Arduino Due.
 
 #. Done!
-   
+
 Command line tool
 =================
 
@@ -357,3 +389,5 @@ of them:
 .. _Microchip: https://www.microchip.com/
 
 .. _PIC32MM0256GPM064: https://www.microchip.com/wwwproducts/en/PIC32MM0256GPM064
+
+.. _Arduino IDE: https://www.arduino.cc/en/Main/Software
