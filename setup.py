@@ -33,6 +33,7 @@ setup(name='pictools',
       ],
       packages=find_packages(),
       include_package_data=True,
+      test_suite="tests",
       entry_points = {
           'console_scripts': ['pictools=pictools.__init__:_main']
       })

@@ -30,6 +30,10 @@
 
 .PHONY: programmer
 
+test:
+	python3 setup.py test
+	codespell -d $$(git ls-files | grep -v 3pp | grep -v \.bin | grep -v \.out | grep -v images)
+
 test-target:
 	python3 -u tests/target.py
 

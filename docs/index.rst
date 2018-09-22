@@ -135,7 +135,7 @@ erase and read back verify operations.
 
    > pictools --port /dev/arduino flash_write --chip-erase hello_world.s19
    Programmer is alive.
-   Resetted PIC.
+   PIC reset.
    Erasing the chip.
    Chip erase complete.
    Connected to PIC.
@@ -211,7 +211,7 @@ Reset the PIC.
 
    > pictools --port /dev/arduino reset
    Programmer is alive.
-   Resetted PIC.
+   PIC reset.
 
 Print the configuration memory
 ------------------------------
@@ -320,7 +320,7 @@ for PIC32MM0256GPM064 can be seen below.
 
    > time pictools -p /dev/arduino -m pic32mm0256gpm064 flash_write -c zeros.s19
    Programmer is alive.
-   Resetted PIC.
+   PIC reset.
    Erasing the chip.
    Chip erase complete.
    Connected to PIC.
