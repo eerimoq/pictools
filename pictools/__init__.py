@@ -270,6 +270,31 @@ class CommandFailedError(Exception):
         return format_error(self.error)
 
 
+class Serial(serial.Serial):
+
+    def __init__(self, port, baudrate, timeout):
+        super().__init__(port, baudrate=baudrate, timeout=timeout)
+        self._input_buffer = b''
+
+    def read(self, size=1):
+        if size <= 0:
+            return b''
+
+        data = self._input_buffer[:size]
+        self._input_buffer = self._input_buffer[size:]
+
+        if len(data) < size:
+            data += super().read(size - len(data))
+
+        return data
+
+    def peek(self, size):
+        data = self.read(size)
+        self._input_buffer = (data + self._input_buffer)
+
+        return data
+
+
 def crc_ccitt(data):
     """Calculate a CRC of given data.
 
@@ -322,9 +347,7 @@ def physical_flash_address(address):
 
 
 def serial_open(port):
-    return serial.Serial(port,
-                         baudrate=460800,
-                         timeout=SERIAL_TIMEOUT)
+    return Serial(port, baudrate=460800, timeout=SERIAL_TIMEOUT)
 
 
 def serial_open_ensure_connected_to_programmer(port):
@@ -470,6 +493,21 @@ def receive_command(serial_connection, command_type):
     if response_command_type == command_type:
         return response_payload
     elif response_command_type == COMMAND_TYPE_FAILED:
+        error = struct.unpack('>i', response_payload)[0]
+
+        raise CommandFailedError(error)
+
+    sys.exit('Communication failure.')
+
+
+def assert_receive_failure(serial_connection):
+    """Receive a failure.
+
+    """
+
+    response_command_type, response_payload = packet_read(serial_connection)
+
+    if response_command_type == COMMAND_TYPE_FAILED:
         error = struct.unpack('>i', response_payload)[0]
 
         raise CommandFailedError(error)
@@ -671,6 +709,15 @@ def create_chunks(binfile):
     return chunks, fast_chunks, total
 
 
+def receive_fast_write_ack(serial_connection):
+    response = serial_connection.peek(2)
+
+    if response == b'\x00\x00':
+        serial_connection.read(2)
+    else:
+        assert_receive_failure(serial_connection)
+
+
 def do_flash_write(args):
     binfile = bincopy.BinFile(args.binfile)
 
@@ -710,25 +757,15 @@ def do_flash_write(args):
             send_command(serial_connection,
                          PROGRAMMER_COMMAND_TYPE_FAST_WRITE,
                          header)
-
             serial_connection.write(data[:256])
 
             for offset in range(256, len(data), 256):
                 serial_connection.write(data[offset:offset + 256])
-                response = serial_connection.read(1)
-
-                if response != b'\x00':
-                    sys.exit('Wrong response byte to fast write.')
-
+                receive_fast_write_ack(serial_connection)
                 progress.update(256)
 
-            response = serial_connection.read(1)
-
-            if response != b'\x00':
-                sys.exit('Wrong response byte to fast write.')
-
+            receive_fast_write_ack(serial_connection)
             progress.update(256)
-
             receive_command(serial_connection, PROGRAMMER_COMMAND_TYPE_FAST_WRITE)
 
     print('Write complete.')

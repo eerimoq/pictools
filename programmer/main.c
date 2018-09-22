@@ -593,7 +593,7 @@ static ssize_t handle_chip_erase(uint8_t *buf_p, size_t size)
 
 static ssize_t handle_fast_write(uint8_t *buf_p, size_t size)
 {
-    uint8_t response;
+    uint16_t response;
     int res;
     struct time_t timeout;
 

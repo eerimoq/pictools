@@ -1,9 +1,7 @@
-PIC32 RAM application (PE)
-==========================
+PIC programmer
+==============
 
-Erase, read and write PIC32 flash memories, and more.
-
-Upload this application to PIC32 MCU using the ICSP protocol.
+Upload this application to the Arduino Due.
 
 Protocol
 --------
@@ -22,10 +20,17 @@ This is the packet format:
    TYPE  REQ-SIZE  RSP-SIZE  DESCRIPTION
    ------------------------------------------------
      -1         -         4  Command failure.
-      1         0         0  Ping.
-      2         8         0  Erase flash.
-      3         8         n  Read from flash.
-      4       8+n         0  Write to flash.
+      0         -         -  Fast write packet acknowledge. A truncated
+                             packet without size, payload and crc.
+    100         0         0  Ping the programmer.
+    101         0         0  Connect to the PIC. Uploads the ramapp (PE) to
+                             the PIC.
+    102         0         0  Disconnect from the PIC by setting MCLRN, PGED
+                             and PGEC to inputs.
+    103         0         0  Reset the PIC. Requires that the PIC is
+                             disconnected.
+    104         0         1  Read the PIC status.
+    105         0         0  Perform a chip erase.
     106        12         0  Fast write to flash.
 
 Command failure
@@ -73,11 +78,11 @@ Write flash
    | 4 | 8 + size | 4b address | 4b size | <size>b data | crc |
    +---+----------+------------+---------+--------------+-----+
 
-Fast write to flash
-^^^^^^^^^^^^^^^^^^^
+Fast write flash
+^^^^^^^^^^^^^^^^
 
-Start fast write packet. The response to this packet is sent after all
-data packets have been received.
+Start fast write packet. The final response to this packet is sent
+after all data packets have been exchanged.
 
 Address must be aligned on a 256 bytes boundary, a row, and size must
 be a multiple of 256 bytes. Crc is a 32 bits CRC of all data packets
@@ -97,14 +102,22 @@ Data packet. Contains data for one flash row.
    | 256b data |
    +-----------+
 
+Data acknowledge packet. A truncated packet with type 0.
+
+.. code-block:: text
+
+   +---+
+   | 0 |
+   +---+
+
 Example fast write sequence with a request, multiple data packets and
 a response:
 
 .. code-block:: text
 
-   +-------------+                          +---------+
-   | programmer  |                          | ramapp  |
-   +-------------+                          +---------+
+       +-----+                            +-------------+
+       | PC  |                            | programmer  |
+       +-----+                            +-------------+
           |                                      |
           |   Fast write request of 18176 bytes  |
           |------------------------------------->|
@@ -112,17 +125,29 @@ a response:
           |              Data 0-255              |
           |------------------------------------->|
           |                                      |
+          |              Data ack                |
+          |<-------------------------------------|
+          |                                      |
           |             Data 256-511             |
           |------------------------------------->|
           |                                      |
+          |              Data ack                |
+          |<-------------------------------------|
+          |                                      |
           |             Data 512-767             |
           |------------------------------------->|
+          |                                      |
+          |              Data ack                |
+          |<-------------------------------------|
           |                                      |
           .                                      .
           .                                      .
           .                                      .
           |           Data 17920-18175           |
           |------------------------------------->|
+          |                                      |
+          |              Data ack                |
+          |<-------------------------------------|
           |                                      |
           |         Fast write response          |
           |<-------------------------------------|
