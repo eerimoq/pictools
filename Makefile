@@ -38,8 +38,8 @@ test-target:
 	python3 -u tests/target.py
 
 release-to-pypi:
-	python setup.py sdist
-	python setup.py bdist_wheel --universal
+	python3 setup.py sdist
+	python3 setup.py bdist_wheel
 	twine upload dist/*
 
 programmer:
