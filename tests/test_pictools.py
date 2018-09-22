@@ -1,3 +1,4 @@
+import sys
 import unittest
 
 try:
@@ -10,37 +11,67 @@ try:
 except ImportError:
     from io import StringIO
 
+sys.path.insert(0, 'tests')
+
 import pictools
 import serial
+
+
+def ping_read():
+    return [b'\x00\x64\x00\x00', b'\xc3\x6b']
+
+
+def ping_write():
+    return ((b'\x00\x64\x00\x00\xc3\x6b', ), )
+
+
+def disconnect_read():
+    return [b'\x00\x66\x00\x00', b'\xad\x0b']
+
+
+def disconnect_write():
+    return ((b'\x00\x66\x00\x00\xad\x0b', ), )
+
+
+def reset_read():
+    return [b'\x00\x67\x00\x00', b'\x9a\x3b']
+
+
+def reset_write():
+    return ((b'\x00\x67\x00\x00\x9a\x3b', ), )
 
 
 class PicToolsTest(unittest.TestCase):
 
     def test_reset(self):
         argv = ['pictools', 'reset']
-        expected_output = """\
-Programmer is alive.
-Disconnected from PIC.
-PIC reset.
-"""
 
         stdout = StringIO()
         serial.Serial.read.side_effect = [
-            # Ping.
-            b'\x00\x64\x00\x00', b'\xc3\x6b',
-            # Disconnect.
-            b'\x00\x66\x00\x00', b'\xad\x0b',
-            # Reset.
-            b'\x00\x67\x00\x00', b'\x9a\x3b'
+            *ping_read(),
+            *disconnect_read(),
+            *reset_read()
         ]
 
         with patch('sys.stdout', stdout):
             with patch('sys.argv', argv):
                 pictools.main()
-                actual_output = stdout.getvalue()
-                self.assertEqual(actual_output, expected_output)
 
-        print(serial.Serial.write.call_args_list)
+        expected_output = """\
+Programmer is alive.
+Disconnected from PIC.
+PIC reset.
+"""
+        actual_output = stdout.getvalue()
+        self.assertEqual(actual_output, expected_output)
+
+        expected_writes = [
+            ping_write(),
+            disconnect_write(),
+            reset_write()
+        ]
+        actual_writes = serial.Serial.write.call_args_list
+        self.assertEqual(actual_writes, expected_writes)
 
 
 if __name__ == '__main__':

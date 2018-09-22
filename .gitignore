@@ -56,3 +56,5 @@ docs/_build/
 # PyBuilder
 target/
 memory.s19
+data.s19
+zeros.s19

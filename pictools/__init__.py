@@ -714,7 +714,7 @@ def create_chunks(binfile):
 
 def receive_fast_write_ack(serial_connection):
     response = serial_connection.peek(2)
-    command_type = struct.unpack('>h', response)
+    command_type = struct.unpack('>h', response)[0]
 
     if command_type == PROGRAMMER_COMMAND_TYPE_FAST_WRITE_ACK:
         serial_connection.read(2)
