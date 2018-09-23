@@ -76,8 +76,8 @@ Request and response packet.
    | 102 | 0 | crc |
    +-----+---+-----+
 
-Rest the PIC
-^^^^^^^^^^^^
+Reset the PIC
+^^^^^^^^^^^^^
 
 Request and response packet.
 
