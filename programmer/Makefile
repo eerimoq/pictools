@@ -34,6 +34,8 @@ NAME = programmer
 BOARD ?= arduino_due
 VERSION ?= 0.7.0
 
+SRC += descriptors.c
+
 RAMAPP_UPLOAD_INSTRUCTIONS_I = programmer/ramapp_upload_instructions.i
 RAMAPP_OUT = ramapp/build/defcon26_badge/ramapp.out
 
