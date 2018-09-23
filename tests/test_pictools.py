@@ -495,6 +495,26 @@ class PicToolsTest(unittest.TestCase):
                             ''
                         ])
 
+    def test_programmer_upload(self):
+        argv = ['pictools', 'programmer_upload']
+
+        check_call = Mock()
+        find_executable = Mock(return_value='found')
+        sleep = Mock()
+
+        with patch('subprocess.check_call', check_call):
+            with patch('pictools.find_executable', find_executable):
+                with patch('time.sleep', sleep):
+                    with patch('sys.argv', argv):
+                        pictools.main()
+
+        serial.Serial.__init__.assert_called_once_with('/dev/ttyUSB1', 1200)
+        sleep.assert_called_once_with(2)
+        find_executable.assert_called_once_with('bossac')
+        self.assertEqual(len(check_call.call_args_list), 1)
+        self.assertEqual(check_call.call_args_list[0][0][0][:-1],
+                         ['bossac', '--port', 'ttyUSB1', '-e', '-w', '-b', '-R'])
+
     def test_generate_ramapp_upload_instructions(self):
         argv = [
             'pictools',
@@ -506,9 +526,9 @@ class PicToolsTest(unittest.TestCase):
         with open('tests/files/ramapp.dis', 'rb') as fin:
             check_output = Mock(return_value=fin.read())
 
-            with patch('subprocess.check_output', check_output):
-                with patch('sys.argv', argv):
-                    pictools.main()
+        with patch('subprocess.check_output', check_output):
+            with patch('sys.argv', argv):
+                pictools.main()
 
         with open('tests/files/ramapp.i', 'r') as fin:
             expected = fin.read()
