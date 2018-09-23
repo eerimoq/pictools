@@ -75,6 +75,7 @@ PROGRAMMER_COMMAND_TYPE_RESET          =  103
 PROGRAMMER_COMMAND_TYPE_DEVICE_STATUS  =  104
 PROGRAMMER_COMMAND_TYPE_CHIP_ERASE     =  105
 PROGRAMMER_COMMAND_TYPE_FAST_WRITE     =  106
+PROGRAMMER_COMMAND_TYPE_VERSION        =  107
 
 ERASE_TIMEOUT = 5
 SERIAL_TIMEOUT = 1
@@ -110,7 +111,8 @@ COMMAND_TYPE_TO_STRING = {
     103: 'PROGRAMMER_RESET',
     104: 'PROGRAMMER_DEVICE_STATUS',
     105: 'PROGRAMMER_CHIP_ERASE',
-    106: 'PROGRAMMER_FAST_WRITE'
+    106: 'PROGRAMMER_FAST_WRITE',
+    107: 'PROGRAMMER_VERSION'
 }
 
 RAMAPP_UPLOAD_INSTRUCTIONS_I_FMT = '''\
@@ -890,6 +892,14 @@ def do_programmer_upload(args):
     print('Upload complete.')
 
 
+def do_programmer_version(args):
+    serial_connection = serial_open_ensure_connected_to_programmer(args.port)
+    version = execute_command(serial_connection,
+                              PROGRAMMER_COMMAND_TYPE_VERSION)
+
+    print(version.decode('ascii'))
+
+
 def do_generate_ramapp_upload_instructions(args):
     instructions = []
 
@@ -1101,6 +1111,11 @@ def main():
     subparser.add_argument('-b', '--bossac-path',
                            help='Path to bossac if not installed in PATH.')
     subparser.set_defaults(func=do_programmer_upload)
+
+    subparser = subparsers.add_parser(
+        'programmer_version',
+        help='Read the programmer software version.')
+    subparser.set_defaults(func=do_programmer_version)
 
     subparser = subparsers.add_parser(
         'generate_ramapp_upload_instructions',

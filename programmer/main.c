@@ -81,6 +81,7 @@
 #define COMMAND_TYPE_DEVICE_STATUS                        104
 #define COMMAND_TYPE_CHIP_ERASE                           105
 #define COMMAND_TYPE_FAST_WRITE                           106
+#define COMMAND_TYPE_VERSION                              107
 
 /* Packet sizes. */
 #define PACKET_FAST_WRITE_REQUEST_SIZE                     18
@@ -595,6 +596,13 @@ static ssize_t handle_chip_erase(uint8_t *buf_p, size_t size)
     return (res);
 }
 
+static ssize_t handle_version(uint8_t *buf_p, size_t size)
+{
+    strcpy((char *)&buf_p[4], VERSION_STR);
+
+    return (strlen((char *)&buf_p[4]));
+}
+
 static ssize_t handle_fast_write(uint8_t *buf_p, size_t size)
 {
     uint16_t response;
@@ -734,6 +742,10 @@ static ssize_t handle_programmer_command(int type,
                 return (res);
             }
 
+            break;
+
+        case COMMAND_TYPE_VERSION:
+            res = handle_version(buf_p, size);
             break;
 
         default:

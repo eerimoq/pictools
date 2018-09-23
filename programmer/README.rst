@@ -32,6 +32,7 @@ This is the packet format:
     104         0         1  Read the PIC status.
     105         0         0  Perform a chip erase.
     106        12         0  Fast write to flash.
+    107         0         n  Read programmer version.
 
 Command failure
 ^^^^^^^^^^^^^^^
@@ -47,36 +48,9 @@ Ping
 
 .. code-block:: text
 
-   +---+---+-----+
-   | 1 | 0 | crc |
-   +---+---+-----+
-
-Erase flash
-^^^^^^^^^^^
-
-.. code-block:: text
-
-   +---+---+------------+---------+-----+
-   | 2 | 8 | 4b address | 4b size | crc |
-   +---+---+------------+---------+-----+
-
-Read flash
-^^^^^^^^^^
-
-.. code-block:: text
-
-   +---+---+------------+---------+-----+
-   | 3 | 8 | 4b address | 4b size | crc |
-   +---+---+------------+---------+-----+
-
-Write flash
-^^^^^^^^^^^
-
-.. code-block:: text
-
-   +---+----------+------------+---------+--------------+-----+
-   | 4 | 8 + size | 4b address | 4b size | <size>b data | crc |
-   +---+----------+------------+---------+--------------+-----+
+   +-----+---+-----+
+   | 100 | 0 | crc |
+   +-----+---+-----+
 
 Fast write flash
 ^^^^^^^^^^^^^^^^
@@ -153,3 +127,12 @@ a response:
           |<-------------------------------------|
           |                                      |
           |                                      |
+
+Programmer version
+^^^^^^^^^^^^^^^^^^
+
+.. code-block:: text
+
+   +-----+------+-----------------------+-----+
+   | 107 | size | <size>b ascii version | crc |
+   +-----+------+-----------------------+-----+

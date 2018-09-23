@@ -29,6 +29,14 @@ def programmer_ping_write():
     return ((b'\x00\x64\x00\x00\xc3\x6b', ), )
 
 
+def programmer_version_read():
+    return [b'\x00\x6b\x00\x05', b'1.2.3', b'\xbb\xd3']
+
+
+def programmer_version_write():
+    return ((b'\x00\x6b\x00\x00\xef\x5a', ), )
+
+
 def connect_read():
     return [b'\x00\x65\x00\x00', b'\xf4\x5b']
 
@@ -622,6 +630,23 @@ class PicToolsTest(unittest.TestCase):
         self.assertEqual(len(check_call.call_args_list), 1)
         self.assertEqual(check_call.call_args_list[0][0][0][:-1],
                          ['bossac', '--port', 'ttyUSB1', '-e', '-w', '-b', '-R'])
+
+    def test_programmer_version(self):
+        self.assert_command(
+            ['pictools', 'programmer_version'],
+            [
+                *programmer_ping_read(),
+                *programmer_version_read()
+            ],
+            [
+                programmer_ping_write(),
+                programmer_version_write()
+            ],
+            [
+                'Programmer is alive.',
+                '1.2.3',
+                ''
+            ])
 
     def test_generate_ramapp_upload_instructions(self):
         argv = [

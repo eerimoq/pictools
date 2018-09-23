@@ -299,6 +299,16 @@ Test if the programmer is alive.
    > pictools --port /dev/arduino programmer_ping
    Programmer is alive.
 
+Read the programmer software version
+------------------------------------
+
+Read the programmer software version from the programmer.
+
+.. code-block:: text
+
+   > pictools --port /dev/arduino programmer_version
+   0.9.0
+
 Ping the PIC
 --------------
 

@@ -52,6 +52,7 @@ def main():
     run('reset')
     run('flash_write --chip-erase zeros.s19', timed=True)
     run('flash_erase_chip')
+    run('programmer_version')
 
 
 if __name__ == '__main__':
