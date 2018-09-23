@@ -69,6 +69,18 @@ def flash_erase_chip_write():
     return ((b'\x00\x69\x00\x00\x81\x3a', ), )
 
 
+def flash_erase_read():
+    return [b'\x00\x02\x00\x00', b'\xea\xa0']
+
+
+def flash_erase_write(address, size, crc):
+    payload = struct.pack('>II', address, size)
+    header = b'\x00\x02' + struct.pack('>H', len(payload))
+    crc = struct.pack('>H', crc)
+
+    return ((header + payload + crc, ), )
+
+
 def flash_write_read():
     return [b'\x00\x04\x00\x00', b'\x58\x00']
 
@@ -83,10 +95,10 @@ def flash_write_write(address, size, data, crc):
 
 def flash_read_read(data, crc=None):
     header = b'\x00\x03' + struct.pack('>H', len(data))
-    
+
     if crc is None:
         crc = pictools.crc_ccitt(header + data)
-        
+
     return [
         header,
         data,
@@ -97,7 +109,7 @@ def flash_read_read(data, crc=None):
 def flash_read_write(address, size, crc=None):
     payload = struct.pack('>II', address, size)
     header = b'\x00\x03' + struct.pack('>H', len(payload))
-    
+
     if crc is None:
         crc = pictools.crc_ccitt(header + payload)
 
@@ -321,7 +333,7 @@ class PicToolsTest(unittest.TestCase):
 
         for _, data in binfile.segments.chunks(504):
             flash_read_reads += flash_read_read(data)
-            
+
         serial.Serial.read.side_effect = [
             *programmer_ping_read(),
             *connect_read(),
@@ -354,7 +366,35 @@ class PicToolsTest(unittest.TestCase):
             expected = fin.read()
 
         self.assertEqual(actual, expected)
-            
+
+    def test_flash_erase(self):
+        argv = [
+            'pictools',
+            'flash_erase',
+            '0x1d001000',
+            '0x3000'
+        ]
+
+        serial.Serial.read.side_effect = [
+            *programmer_ping_read(),
+            *connect_read(),
+            *ping_read(),
+            *flash_erase_read()
+        ]
+
+        with patch('sys.argv', argv):
+            pictools.main()
+
+        expected_writes = [
+            programmer_ping_write(),
+            connect_write(),
+            ping_write(),
+            flash_erase_write(0x1d001000, 0x3000, 0x7974)
+        ]
+
+        self.assert_calls(serial.Serial.write.call_args_list,
+                          expected_writes
+)
     def test_generate_ramapp_upload_instructions(self):
         argv = [
             'pictools',
