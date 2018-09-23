@@ -473,34 +473,13 @@ def packet_read(serial_connection):
     return command_type, payload
 
 
-def execute_command(serial_connection, command_type, payload=None):
-    """Execute given command and return the response payload.
+def send_command(serial_connection, command_type, payload):
+    """Send given command.
 
     """
 
     if payload is None:
         payload = b''
-
-    packet_write(serial_connection, command_type, payload)
-    response_command_type, response_payload = packet_read(serial_connection)
-
-    if response_command_type == command_type:
-        return response_payload
-    elif response_command_type == COMMAND_TYPE_FAILED:
-        error = struct.unpack('>i', response_payload)[0]
-
-        raise CommandFailedError(error)
-    else:
-        sys.exit(
-            'error: expected programmer command response type {}, but '
-            'got {}'.format(format_command_type(command_type),
-                            format_command_type(response_command_type)))
-
-
-def send_command(serial_connection, command_type, payload):
-    """Send given command.
-
-    """
 
     packet_write(serial_connection, command_type, payload)
 
@@ -518,8 +497,21 @@ def receive_command(serial_connection, command_type):
         error = struct.unpack('>i', response_payload)[0]
 
         raise CommandFailedError(error)
+    else:
+        sys.exit(
+            'error: expected programmer command response type {}, but '
+            'got {}'.format(format_command_type(command_type),
+                            format_command_type(response_command_type)))
 
-    sys.exit('error: no programmer command response received')
+
+def execute_command(serial_connection, command_type, payload=None):
+    """Execute given command and return the response payload.
+
+    """
+
+    send_command(serial_connection, command_type, payload)
+
+    return receive_command(serial_connection, command_type)
 
 
 def assert_receive_failure(serial_connection):
@@ -744,7 +736,7 @@ def receive_fast_write_ack(serial_connection):
     if len(response) != 2:
         sys.exit('error: timeout waiting for fast write response from '
                  'the programmer')
-        
+
     command_type = struct.unpack('>h', response)[0]
 
     if command_type == PROGRAMMER_COMMAND_TYPE_FAST_WRITE_ACK:
