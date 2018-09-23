@@ -11,7 +11,7 @@ Protocol
 On command success the type field is copied from the request to the
 response packet. On failure the response type is set to -1.
 
-This is the packet format:
+This is the packet format and available commands.
 
 .. code-block:: text
 
@@ -40,6 +40,8 @@ Command failure
 Ping
 ^^^^
 
+Request and response packet.
+
 .. code-block:: text
 
    +---+---+-----+
@@ -49,14 +51,26 @@ Ping
 Erase flash
 ^^^^^^^^^^^
 
+Request packet.
+
 .. code-block:: text
 
    +---+---+------------+---------+-----+
    | 2 | 8 | 4b address | 4b size | crc |
    +---+---+------------+---------+-----+
 
+Response packet.
+
+.. code-block:: text
+
+   +---+---+-----+
+   | 2 | 0 | crc |
+   +---+---+-----+
+
 Read flash
 ^^^^^^^^^^
+
+Request packet.
 
 .. code-block:: text
 
@@ -64,14 +78,32 @@ Read flash
    | 3 | 8 | 4b address | 4b size | crc |
    +---+---+------------+---------+-----+
 
+Response packet.
+
+.. code-block:: text
+
+   +---+------+--------------+-----+
+   | 3 | size | <size>b data | crc |
+   +---+------+--------------+-----+
+
 Write flash
 ^^^^^^^^^^^
+
+Request packet.
 
 .. code-block:: text
 
    +---+----------+------------+---------+--------------+-----+
    | 4 | 8 + size | 4b address | 4b size | <size>b data | crc |
    +---+----------+------------+---------+--------------+-----+
+
+Response packet.
+
+.. code-block:: text
+
+   +---+---+-----+
+   | 4 | 0 | crc |
+   +---+---+-----+
 
 Fast write to flash
 ^^^^^^^^^^^^^^^^^^^

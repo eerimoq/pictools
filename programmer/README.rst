@@ -9,7 +9,8 @@ Protocol
 On command success the type field is copied from the request to the
 response packet. On failure the response type is set to -1.
 
-This is the packet format:
+This is the packet format and available commands. Any ramapp commands
+are forwarded to and from the ramapp.
 
 .. code-block:: text
 
