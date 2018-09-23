@@ -73,6 +73,10 @@ def flash_erase_read():
     return [b'\x00\x02\x00\x00', b'\xea\xa0']
 
 
+def failure_read():
+    return [b'\xff\xff\x00\x04', b'\xff\xff\xfc\x10', b'\x49\x5b']
+
+
 def flash_erase_write(address, size, crc):
     payload = struct.pack('>II', address, size)
     header = b'\x00\x02' + struct.pack('>H', len(payload))
@@ -642,6 +646,91 @@ class PicToolsTest(unittest.TestCase):
             actual = fin.read()
 
         self.assertEqual(actual, expected)
+
+    def test_execute_command_wrong_response(self):
+        argv = ['pictools', 'device_status_print']
+
+        serial.Serial.read.side_effect = [
+            *programmer_ping_read(),
+            # Unexpected erase response.
+            *flash_erase_read()
+        ]
+
+        with patch('sys.argv', argv):
+            with self.assertRaises(SystemExit) as cm:
+                pictools.main()
+
+            self.assertEqual(
+                str(cm.exception),
+                'error: expected programmer command response type '
+                'PROGRAMMER_DEVICE_STATUS, but got ERASE')
+
+    def test_execute_command_failure_response(self):
+        argv = ['pictools', 'device_status_print']
+
+        serial.Serial.read.side_effect = [
+            *programmer_ping_read(),
+            *failure_read()
+        ]
+
+        with patch('sys.argv', argv):
+            with self.assertRaises(SystemExit) as cm:
+                pictools.main()
+
+            self.assertEqual(str(cm.exception), 'error: 1008: flash write failed')
+
+    def test_execute_command_short_header_response(self):
+        argv = ['pictools', 'device_status_print']
+
+        serial.Serial.read.side_effect = [
+            *programmer_ping_read(),
+            b'\x00\x01\x02'
+        ]
+
+        with patch('sys.argv', argv):
+            with self.assertRaises(SystemExit) as cm:
+                pictools.main()
+
+            self.assertEqual(
+                str(cm.exception),
+                'error: timeout reading the response packet header from the '
+                'programmer')
+
+    def test_execute_command_short_payload_response(self):
+        argv = ['pictools', 'device_status_print']
+
+        serial.Serial.read.side_effect = [
+            *programmer_ping_read(),
+            b'\x00\x00\x00\x02',
+            b'\x55'
+        ]
+
+        with patch('sys.argv', argv):
+            with self.assertRaises(SystemExit) as cm:
+                pictools.main()
+
+            self.assertEqual(
+                str(cm.exception),
+                'error: timeout reading the response packet payload from the '
+                'programmer')
+
+    def test_execute_command_short_crc_response(self):
+        argv = ['pictools', 'device_status_print']
+
+        serial.Serial.read.side_effect = [
+            *programmer_ping_read(),
+            b'\x00\x00\x00\x00',
+            b'\x55'
+        ]
+
+        with patch('sys.argv', argv):
+            with self.assertRaises(SystemExit) as cm:
+                pictools.main()
+
+            self.assertEqual(
+                str(cm.exception),
+                'error: timeout reading the response packet crc from the '
+                'programmer')
 
 
 if __name__ == '__main__':

@@ -451,18 +451,16 @@ def packet_read(serial_connection):
         payload = serial_connection.read(payload_size)
 
         if len(payload) != payload_size:
-            sys.exit(
-                'error: expected {} bytes, but got {} ({})'.format(
-                    payload_size,
-                    len(payload),
-                    binascii.hexlify(payload)))
+            sys.exit('error: timeout reading the response packet payload from '
+                     'the programmer')
     else:
         payload = b''
 
     crc = serial_connection.read(2)
 
     if len(crc) != 2:
-        sys.exit('error: failed to read packet crc')
+        sys.exit('error: timeout reading the response packet crc from the '
+                 'programmer')
 
     actual_crc = struct.unpack('>H', crc)[0]
     expected_crc = crc_ccitt(header + payload)
@@ -492,8 +490,6 @@ def execute_command(serial_connection, command_type, payload=None):
         error = struct.unpack('>i', response_payload)[0]
 
         raise CommandFailedError(error)
-    elif response_command_type is None:
-        sys.exit('error: invalid programmer command response')
     else:
         sys.exit(
             'error: expected programmer command response type {}, but '
