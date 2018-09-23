@@ -53,3 +53,6 @@ programmer-clean:
 
 programmer-dist:
 	cd programmer && $(MAKE) dist
+
+programmer-upload:
+	python3 -m pictools -p /dev/arduino programmer_upload -u
