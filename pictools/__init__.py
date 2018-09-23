@@ -398,7 +398,7 @@ def serial_open_ensure_connected(port):
     except CommandFailedError as e:
         if e.error == -EISCONN:
             pass
-        elif e.error == -EPROTO:
+        elif e.error in [-EPROTO, -EENTERSERIALEXECUTIONMODE, -ERAMAPPUPLOAD]:
             reset(serial_connection)
             connect(serial_connection)
         else:
