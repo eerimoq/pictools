@@ -523,7 +523,7 @@ def receive_command(serial_connection, command_type):
 
         raise CommandFailedError(error)
 
-    sys.exit('error: no programmer command response recieved')
+    sys.exit('error: no programmer command response received')
 
 
 def assert_receive_failure(serial_connection):
