@@ -257,8 +257,8 @@ class PicToolsTest(unittest.TestCase):
         argv = ['pictools', 'flash_write', 'test_flash_write.s19']
 
         chunks = [
-            bytearray(range(256)),
-            b'\x45' + bytearray(range(256))[1:]
+            bytes(range(256)),
+            b'\x45' + bytes(range(256))[1:]
         ]
         serial.Serial.read.side_effect = [
             *programmer_ping_read(),
@@ -393,8 +393,108 @@ class PicToolsTest(unittest.TestCase):
         ]
 
         self.assert_calls(serial.Serial.write.call_args_list,
-                          expected_writes
-)
+                          expected_writes)
+
+    def read_words(self, argv, address, data, output_lines):
+        stdout = StringIO()
+        serial.Serial.read.side_effect = [
+            *programmer_ping_read(),
+            *connect_read(),
+            *ping_read(),
+            *flash_read_read(data)
+        ]
+
+        with patch('sys.argv', argv):
+            with patch('sys.stdout', stdout):
+                pictools.main()
+
+        actual_output = stdout.getvalue()
+        expected_output = '\n'.join(output_lines)
+        self.assertEqual(actual_output, expected_output)
+
+        expected_writes = [
+            programmer_ping_write(),
+            connect_write(),
+            ping_write(),
+            flash_read_write(address, len(data))
+        ]
+
+        self.assert_calls(serial.Serial.write.call_args_list,
+                          expected_writes)
+
+    def test_configuration_print(self):
+        self.read_words(['pictools', 'configuration_print'],
+                        0x1fc017c0,
+                        bytes(range(40)),
+                        [
+                            'Programmer is alive.',
+                            'Connected to PIC.',
+                            'PIC is alive.',
+                            'FDEVOPT',
+                            '  USERID: 1798',
+                            '  FVBUSIO: 0',
+                            '  FUSBIDIO: 0',
+                            '  ALTI2C: 0',
+                            '  SOSCHP: 0',
+                            'FICD',
+                            '  ICS: 1',
+                            '  JTAGEN: 0',
+                            'FPOR',
+                            '  LPBOREN: 1',
+                            '  RETVR: 1',
+                            '  BOREN: 0',
+                            'FWDT',
+                            '  FWDTEN: 0',
+                            '  RCLKSEL: 0',
+                            '  RWDTPS: 17',
+                            '  WINDIS: 0',
+                            '  FWDTWINSZ: 0',
+                            '  SWDTPS: 16',
+                            'FOSCSEL',
+                            '  FCKSM: 0',
+                            '  SOSCSEL: 1',
+                            '  OSCIOFNC: 1',
+                            '  POSCMOD: 1',
+                            '  IESO: 0',
+                            '  SOSCEN: 0',
+                            '  PLLSRC: 1',
+                            '  FNOSC: 4',
+                            'FSEC',
+                            '  CP: 0',
+                            ''
+                        ])
+
+    def test_device_id_print(self):
+        self.read_words(['pictools', 'device_id_print'],
+                        0x1f803660,
+                        b'\x12\x34\x56\x78',
+                        [
+                            'Programmer is alive.',
+                            'Connected to PIC.',
+                            'PIC is alive.',
+                            'DEVID',
+                            '  VER: 7',
+                            '  DEVID: 0x08563412',
+                            ''
+                        ])
+
+    def test_udid_print(self):
+        self.read_words(['pictools', 'udid_print'],
+                        0x1fc41840,
+                        bytes(range(20)),
+                        [
+                            'Programmer is alive.',
+                            'Connected to PIC.',
+                            'PIC is alive.',
+                            'UDID',
+                            '  UDID1: 0x03020100',
+                            '  UDID2: 0x07060504',
+                            '  UDID3: 0x0b0a0908',
+                            '  UDID4: 0x0f0e0d0c',
+                            '  UDID5: 0x13121110',
+                            ''
+                        ])
+
     def test_generate_ramapp_upload_instructions(self):
         argv = [
             'pictools',
