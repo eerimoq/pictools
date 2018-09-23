@@ -732,6 +732,24 @@ class PicToolsTest(unittest.TestCase):
                 'error: timeout reading the response packet crc from the '
                 'programmer')
 
+    def test_execute_command_bad_crc_response(self):
+        argv = ['pictools', 'device_status_print']
+
+        serial.Serial.read.side_effect = [
+            *programmer_ping_read(),
+            b'\x00\x68\x00\x01',
+            b'\xba',
+            b'\xf8\xbc'
+        ]
+
+        with patch('sys.argv', argv):
+            with self.assertRaises(SystemExit) as cm:
+                pictools.main()
+
+            self.assertEqual(
+                str(cm.exception),
+                'error: expected response packet crc 0xf8bd, but got 0xf8bc')
+
 
 if __name__ == '__main__':
     unittest.main()

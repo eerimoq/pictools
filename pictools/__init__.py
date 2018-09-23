@@ -466,7 +466,7 @@ def packet_read(serial_connection):
     expected_crc = crc_ccitt(header + payload)
 
     if actual_crc != expected_crc:
-        sys.exit('error: expected received packet crc 0x{:04x}, but '
+        sys.exit('error: expected response packet crc 0x{:04x}, but '
                  'got 0x{:04x}'.format(expected_crc,
                                        actual_crc))
 
