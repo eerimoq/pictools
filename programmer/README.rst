@@ -46,10 +46,75 @@ Command failure
 Ping
 ^^^^
 
+Request and response packet.
+
 .. code-block:: text
 
    +-----+---+-----+
    | 100 | 0 | crc |
+   +-----+---+-----+
+
+Connect to the PIC
+^^^^^^^^^^^^^^^^^^
+
+Request and response packet.
+
+.. code-block:: text
+
+   +-----+---+-----+
+   | 101 | 0 | crc |
+   +-----+---+-----+
+
+Disconnect from the PIC
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Request and response packet.
+
+.. code-block:: text
+
+   +-----+---+-----+
+   | 102 | 0 | crc |
+   +-----+---+-----+
+
+Rest the PIC
+^^^^^^^^^^^^
+
+Request and response packet.
+
+.. code-block:: text
+
+   +-----+---+-----+
+   | 103 | 0 | crc |
+   +-----+---+-----+
+
+Read the PIC status
+^^^^^^^^^^^^^^^^^^^
+
+Request packet.
+
+.. code-block:: text
+
+   +-----+---+-----+
+   | 104 | 0 | crc |
+   +-----+---+-----+
+
+Response packet.
+
+.. code-block:: text
+
+   +-----+---+-----------+-----+
+   | 104 | 1 | 1b status | crc |
+   +-----+---+-----------+-----+
+
+Perform a chip erase
+^^^^^^^^^^^^^^^^^^^^
+
+Request and response packet.
+
+.. code-block:: text
+
+   +-----+---+-----+
+   | 105 | 0 | crc |
    +-----+---+-----+
 
 Fast write flash
@@ -130,6 +195,16 @@ a response:
 
 Programmer version
 ^^^^^^^^^^^^^^^^^^
+
+Request packet.
+
+.. code-block:: text
+
+   +-----+---+-----+
+   | 107 | 0 | crc |
+   +-----+---+-----+
+
+Response packet.
 
 .. code-block:: text
 
