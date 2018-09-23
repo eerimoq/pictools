@@ -79,10 +79,10 @@ Installation
       .. code-block:: text
 
          > pictools --port /dev/arduino programmer_upload
-         Uploading programmer application version 0.7.0.
+         Uploading programmer application version 0.9.0.
          Erase flash
-         Write 23248 bytes to flash
-         [==============================] 100% (91/91 pages)
+         Write 23504 bytes to flash
+         [==============================] 100% (92/92 pages)
          Set boot flash true
          CPU reset.
          Upload complete.
@@ -103,10 +103,10 @@ Installation
       .. code-block:: text
 
          > pictools --port COM5 programmer_upload --bossac-path 'c:\Users\erik\Documents\ArduinoData\packages\arduino\tools\bossac\1.6.1-arduino'
-         Uploading programmer application version 0.7.0.
+         Uploading programmer application version 0.9.0.
          Erase flash
-         Write 23248 bytes to flash
-         [==============================] 100% (91/91 pages)
+         Write 23504 bytes to flash
+         [==============================] 100% (92/92 pages)
          Set boot flash true
          CPU reset.
          Upload complete.
@@ -307,6 +307,7 @@ Read the programmer software version from the programmer.
 .. code-block:: text
 
    > pictools --port /dev/arduino programmer_version
+   Programmer is alive.
    0.9.0
 
 Ping the PIC
