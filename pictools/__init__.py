@@ -32,16 +32,18 @@ __version__ = '0.14.1'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 # Error codes.
-EINVAL      = 22
-ERANGE      = 34
-EPROTO      = 71
-EMSGSIZE    = 90
-EISCONN     = 106
-ENOTCONN    = 107
-ETIMEDOUT   = 110
-EBADCRC     = 1007
-EFLASHWRITE = 1008
-EFLASHERASE = 1009
+EINVAL                    = 22
+ERANGE                    = 34
+EPROTO                    = 71
+EMSGSIZE                  = 90
+EISCONN                   = 106
+ENOTCONN                  = 107
+ETIMEDOUT                 = 110
+EBADCRC                   = 1007
+EFLASHWRITE               = 1008
+EFLASHERASE               = 1009
+EENTERSERIALEXECUTIONMODE = 10000
+ERAMAPPUPLOAD             = 10001
 
 ERROR_CODE_MESSAGE = {
     -EINVAL: "invalid argument",
@@ -53,7 +55,9 @@ ERROR_CODE_MESSAGE = {
     -ETIMEDOUT: "PIC command timeout",
     -EBADCRC: "invalid packet checksum",
     -EFLASHWRITE: "flash write failed",
-    -EFLASHERASE: "flash erase failed"
+    -EFLASHERASE: "flash erase failed",
+    -EENTERSERIALEXECUTIONMODE: "enter serial execution mode failed",
+    -ERAMAPPUPLOAD: "ramapp (PE) upload failed"
 }
 
 # Command types. Anything less than zero is error codes.
@@ -438,9 +442,8 @@ def packet_read(serial_connection):
     header = serial_connection.read(4)
 
     if len(header) != 4:
-        print('error: timeout reading packet header')
-
-        return None, None
+        sys.exit('error: timeout reading the response packet header from the '
+                 'programmer')
 
     command_type, payload_size = struct.unpack('>hH', header)
 
@@ -448,30 +451,26 @@ def packet_read(serial_connection):
         payload = serial_connection.read(payload_size)
 
         if len(payload) != payload_size:
-            print('error: received {} bytes when expecting {}'.format(
-                len(payload), payload_size))
-            print('error: payload:', binascii.hexlify(payload))
-
-            return None, None
+            sys.exit(
+                'error: expected {} bytes, but got {} ({})'.format(
+                    payload_size,
+                    len(payload),
+                    binascii.hexlify(payload)))
     else:
         payload = b''
 
     crc = serial_connection.read(2)
 
     if len(crc) != 2:
-        print('error: failed to read packet crc')
-
-        return None, None
+        sys.exit('error: failed to read packet crc')
 
     actual_crc = struct.unpack('>H', crc)[0]
     expected_crc = crc_ccitt(header + payload)
 
     if actual_crc != expected_crc:
-        print('error: expected received packet crc 0x{:04x}, but '
-              'got 0x{:04x}'.format(expected_crc,
-                                    actual_crc))
-
-        return None, None
+        sys.exit('error: expected received packet crc 0x{:04x}, but '
+                 'got 0x{:04x}'.format(expected_crc,
+                                       actual_crc))
 
     return command_type, payload
 
@@ -745,6 +744,11 @@ def create_chunks(binfile):
 
 def receive_fast_write_ack(serial_connection):
     response = serial_connection.peek(2)
+
+    if len(response) != 2:
+        sys.exit('error: timeout waiting for fast write response from '
+                 'the programmer')
+        
     command_type = struct.unpack('>h', response)[0]
 
     if command_type == PROGRAMMER_COMMAND_TYPE_FAST_WRITE_ACK:

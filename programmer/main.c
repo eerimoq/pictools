@@ -89,6 +89,10 @@
 #define CTRL_TIMEOUT_NS                             500000000
 #define ERASE_TIMEOUT_S                                     3
 
+/* Error codes. */
+#define EENTERSERIALEXECUTIONMODE                       10000
+#define ERAMAPPUPLOAD                                   10001
+
 static int connected = 0;
 static struct icsp_soft_driver_t icsp;
 static uint8_t buf[PAYLOAD_OFFSET + MAXIMUM_PAYLOAD_SIZE + CRC_SIZE + 2];
@@ -500,13 +504,13 @@ static ssize_t handle_connect(uint8_t *buf_p, size_t size)
     res = enter_serial_execution_mode(&icsp);
 
     if (res != 0) {
-        return (res);
+        return (-EENTERSERIALEXECUTIONMODE);
     }
 
     res = upload_ramapp(&icsp);
 
     if (res != 0) {
-        return (res);
+        return (-ERAMAPPUPLOAD);
     }
 
     res = send_command(&icsp, ETAP_FASTDATA);
