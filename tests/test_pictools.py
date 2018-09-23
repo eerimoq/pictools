@@ -130,6 +130,14 @@ def flash_write_fast_write(address, size, data_crc, crc):
     return ((header + payload + footer, ), )
 
 
+def flash_write_fast_data_ack():
+    return b'\x00\x00'
+
+
+def flash_write_fast_data_write(chunk):
+    return ((chunk, ), )
+
+
 class PicToolsTest(unittest.TestCase):
 
     def setUp(self):
@@ -264,8 +272,8 @@ class PicToolsTest(unittest.TestCase):
             *programmer_ping_read(),
             *connect_read(),
             *ping_read(),
-            b'\x00\x00',
-            b'\x00\x00',
+            flash_write_fast_data_ack(),
+            flash_write_fast_data_ack(),
             *flash_write_fast_read()
         ]
 
@@ -283,8 +291,8 @@ class PicToolsTest(unittest.TestCase):
             connect_write(),
             ping_write(),
             flash_write_fast_write(0x1d000000, 512, 0x9d6f, 0xe39b),
-            ((chunks[0], ), ),
-            ((chunks[1], ), )
+            flash_write_fast_data_write(chunks[0]),
+            flash_write_fast_data_write(chunks[1])
         ]
 
         self.assert_calls(serial.Serial.write.call_args_list,
@@ -355,7 +363,7 @@ class PicToolsTest(unittest.TestCase):
             connect_write(),
             ping_write(),
             flash_write_fast_write(0x1d000000, 256, 0x3fbd, 0xbd58),
-            ((chunk, ), )
+            flash_write_fast_data_write(chunk)
         ]
 
         self.assert_calls(serial.Serial.write.call_args_list,
