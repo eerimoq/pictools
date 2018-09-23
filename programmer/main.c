@@ -728,7 +728,13 @@ static ssize_t handle_programmer_command(int type,
             break;
 
         case COMMAND_TYPE_FAST_WRITE:
-            return (handle_fast_write(buf_p, size));
+            res = handle_fast_write(buf_p, size);
+
+            if (res >= 0) {
+                return (res);
+            }
+
+            break;
 
         default:
             res = -1;
