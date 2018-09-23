@@ -61,3 +61,4 @@ zeros.s19
 test_flash_write.s19
 test_flash_read_all.s19
 test_generate_ramapp_upload_instructions.i
+test_flash_read.s19

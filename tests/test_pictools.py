@@ -412,6 +412,47 @@ class PicToolsTest(unittest.TestCase):
 
         self.assertEqual(actual, expected)
 
+    def test_flash_read(self):
+        binfile = bincopy.BinFile('tests/files/test_flash_read.s19')
+        flash_read_reads = []
+
+        for _, data in binfile.segments.chunks(504):
+            flash_read_reads += flash_read_read(data)
+
+        flash_read_writes = []
+
+        for address, data in binfile.segments.chunks(504):
+            flash_read_writes.append(flash_read_write(address, len(data)))
+
+        self.assert_command(
+            [
+                'pictools',
+                'flash_read',
+                '0x1d000020',
+                '0xe80',
+                'test_flash_read.s19'
+            ],
+            [
+                *programmer_ping_read(),
+                *connect_read(),
+                *ping_read(),
+                *flash_read_reads
+            ],
+            [
+                programmer_ping_write(),
+                connect_write(),
+                ping_write(),
+                *flash_read_writes
+            ])
+
+        with open('test_flash_read.s19', 'r') as fin:
+            actual = fin.read()
+
+        with open('tests/files/test_flash_read.s19', 'r') as fin:
+            expected = fin.read()
+
+        self.assertEqual(actual, expected)
+
     def test_flash_erase(self):
         self.assert_command(
             [
