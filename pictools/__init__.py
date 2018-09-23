@@ -303,9 +303,10 @@ class Serial(serial.Serial):
     def read(self, size=1):
         data = self._input_buffer[:size]
         self._input_buffer = self._input_buffer[size:]
+        left = (size - len(data))
 
-        if len(data) < size:
-            data += super().read(size - len(data))
+        if left > 0:
+            data += super().read(left)
 
         return data
 
@@ -335,9 +336,9 @@ def crc_ccitt(data):
 
 def format_error(error):
     try:
-        return 'error: {}: '.format(error) + ERROR_CODE_MESSAGE[error]
+        return 'error: {}: '.format(-error) + ERROR_CODE_MESSAGE[error]
     except KeyError:
-        return 'error: {}'.format(error)
+        return 'error: {}'.format(-error)
 
 
 def format_command_type(command_type):

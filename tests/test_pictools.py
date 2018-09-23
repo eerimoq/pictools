@@ -325,6 +325,42 @@ class PicToolsTest(unittest.TestCase):
         self.assert_calls(serial.Serial.write.call_args_list,
                           expected_writes)
 
+    def test_flash_write_fast_data_packet_failure(self):
+        argv = ['pictools', 'flash_write', 'test_flash_write.s19']
+
+        chunk = bytes(range(256))
+        serial.Serial.read.side_effect = [
+            *programmer_ping_read(),
+            *connect_read(),
+            *ping_read(),
+            b'\xff\xff',
+            b'\x00\x04',
+            b'\xff\xff\xfc\x10',
+            b'\x49\x5b'
+        ]
+
+        with open('test_flash_write.s19', 'w') as fout:
+            binfile = bincopy.BinFile()
+            binfile.add_binary(chunk, 0x1d000000)
+            fout.write(binfile.as_srec())
+
+        with patch('sys.argv', argv):
+            with self.assertRaises(SystemExit) as cm:
+                pictools.main()
+
+            self.assertEqual(str(cm.exception), 'error: 1008: flash write failed')
+
+        expected_writes = [
+            programmer_ping_write(),
+            connect_write(),
+            ping_write(),
+            flash_write_fast_write(0x1d000000, 256, 0x3fbd, 0xbd58),
+            ((chunk, ), )
+        ]
+
+        self.assert_calls(serial.Serial.write.call_args_list,
+                          expected_writes)
+
     def test_flash_read_all(self):
         argv = ['pictools', 'flash_read_all', 'test_flash_read_all.s19']
 
