@@ -282,6 +282,34 @@ class PicToolsTest(unittest.TestCase):
                 flash_write_write(0x1d000004, 1, b'\x12', 0x0af8)
             ])
 
+    def test_flash_write_erase(self):
+        with open('test_flash_write.s19', 'w') as fout:
+            binfile = bincopy.BinFile()
+            binfile.add_binary(b'\x12', 0x1d000004)
+            fout.write(binfile.as_srec())
+
+        self.assert_command(
+            [
+                'pictools',
+                'flash_write',
+                '--erase',
+                'test_flash_write.s19'
+            ],
+            [
+                *programmer_ping_read(),
+                *connect_read(),
+                *ping_read(),
+                *flash_erase_read(),
+                *flash_write_read()
+            ],
+            [
+                programmer_ping_write(),
+                connect_write(),
+                ping_write(),
+                flash_erase_write(0x1d000004, 1, 0xff42),
+                flash_write_write(0x1d000004, 1, b'\x12', 0x0af8)
+            ])
+
     def test_flash_write_fast(self):
         chunks = [
             bytes(range(256)),
