@@ -26,7 +26,7 @@ from tqdm import tqdm
 import bitstruct
 
 
-__version__ = '0.14.1'
+__version__ = '0.15.0'
 
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
