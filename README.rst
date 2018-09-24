@@ -1,5 +1,6 @@
 |buildstatus|_
 |coverage|_
+|codecov|_
 
 About
 =====
@@ -21,6 +22,9 @@ Documentation: http://pictools.readthedocs.org/en/latest
 
 .. |coverage| image:: https://coveralls.io/repos/github/eerimoq/pictools/badge.svg?branch=master
 .. _coverage: https://coveralls.io/github/eerimoq/pictools
+
+.. |codecov| image:: https://codecov.io/gh/eerimoq/pictools/branch/master/graph/badge.svg
+.. _codecov: https://codecov.io/gh/eerimoq/pictools
 
 .. _Arduino Due: https://store.arduino.cc/arduino-due
 
