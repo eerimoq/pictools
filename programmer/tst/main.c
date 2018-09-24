@@ -343,6 +343,48 @@ static int test_bad_command_crc(void)
     return (0);
 }
 
+static int test_command_read_header_timeout(void)
+{
+    struct programmer_t programmer;
+    uint8_t request_header[] = { 0x99, 0x99, 0x00, 0x00 };
+    struct time_t time;
+
+    time.seconds = 0;
+    time.nanoseconds = 500000000;
+    mock_write_chan_read_with_timeout(&request_header[0],
+                                      sizeof(request_header),
+                                      &time,
+                                      -ETIMEDOUT);
+    BTASSERT(programmer_init(&programmer) == 0);
+    BTASSERTI(programmer_process_packet(&programmer), ==, -ETIMEDOUT);
+
+    return (0);
+}
+
+static int test_command_read_crc_timeout(void)
+{
+    struct programmer_t programmer;
+    uint8_t request_header[] = { 0x00, 0x99, 0x00, 0x00 };
+    uint8_t request_crc[] = { 0x00, 0x00 };
+    struct time_t time;
+
+    time.seconds = 0;
+    time.nanoseconds = 500000000;
+    mock_write_chan_read_with_timeout(&request_header[0],
+                                      sizeof(request_header),
+                                      &time,
+                                      sizeof(request_header));
+    mock_write_chan_read_with_timeout(&request_crc[0],
+                                      sizeof(request_crc),
+                                      &time,
+                                      -ETIMEDOUT);
+
+    BTASSERT(programmer_init(&programmer) == 0);
+    BTASSERTI(programmer_process_packet(&programmer), ==, -ETIMEDOUT);
+
+    return (0);
+}
+
 int main()
 {
     struct harness_testcase_t testcases[] = {
@@ -354,6 +396,8 @@ int main()
         { test_reset, "test_reset" },
         { test_bad_command_type, "test_bad_command_type" },
         { test_bad_command_crc, "test_bad_command_crc" },
+        { test_command_read_header_timeout, "test_command_read_header_timeout" },
+        { test_command_read_crc_timeout, "test_command_read_crc_timeout" },
         { NULL, NULL }
     };
 
