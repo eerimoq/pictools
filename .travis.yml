@@ -4,6 +4,7 @@ python:
 install:
   - pip install coveralls
   - pip install -r requirements.txt
+  - source setup.sh
 script:
   - coverage run --source=pictools setup.py test
   - make -C programmer/tst -s -j $(cat /proc/cpuinfo | grep processor | wc -l) test
