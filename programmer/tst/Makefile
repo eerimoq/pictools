@@ -28,31 +28,24 @@
 # This file is part of the PIC tools project.
 #
 
-.PHONY: generate_ramapp_upload_instructions_i dist
+NAME = programmer_suite
+TYPE = suite
+BOARD ?= linux
 
-NAME = programmer
-BOARD ?= arduino_due
-VERSION ?= 0.9.0
+CDEFS += UNIT_TEST
+CDEFS += CONFIG_HARNESS_MOCK_ENTRIES_MAX=50000
 
-SRC += programmer.c
-SRC += descriptors.c
+SRC += $(PROGRAMMER_ROOT)/programmer.c
+SRC += $(SIMBA_ROOT)/src/hash/crc.c
+SRC += $(SIMBA_ROOT)/src/collections/bits.c
+SRC += $(SIMBA_ROOT)/tst/stubs/kernel/time_mock.c
+SRC += $(SIMBA_ROOT)/tst/stubs/sync/chan_mock.c
+SRC += $(SIMBA_ROOT)/tst/stubs/drivers/basic/pin_mock.c
+SRC += $(SIMBA_ROOT)/tst/stubs/drivers/network/icsp_soft_mock.c
 
-RAMAPP_UPLOAD_INSTRUCTIONS_I = programmer/ramapp_upload_instructions.i
-RAMAPP_OUT = ramapp/build/defcon26_badge/ramapp.out
-
-DIST_PATH = dist/${VERSION}
-BUILD_PATH = build/arduino_due
-PYTHON_PACKAGE_PATH = ../pictools
+STUB += $(PROGRAMMER_ROOT)/programmer.c:icsp_soft_*
+STUB += $(PROGRAMMER_ROOT)/programmer.c:pin_init,pin_write,pin_set_mode
+STUB += $(PROGRAMMER_ROOT)/programmer.c:chan_read_with_timeout,chan_write
+STUB += $(PROGRAMMER_ROOT)/programmer.c:time_get
 
 include $(SIMBA_ROOT)/make/app.mk
-
-generate_ramapp_upload_instructions_i:
-	cd .. && python3 -m pictools generate_ramapp_upload_instructions \
-	    $(RAMAPP_OUT) \
-	    $(RAMAPP_UPLOAD_INSTRUCTIONS_I)
-
-dist:
-	mkdir -p ${DIST_PATH}
-	cp ${BUILD_PATH}/programmer.{bin,out,hex,map} ${DIST_PATH}
-	cp ${BUILD_PATH}/programmer.bin ${PYTHON_PACKAGE_PATH}
-	echo $(VERSION) > ${PYTHON_PACKAGE_PATH}/programmer-version.txt

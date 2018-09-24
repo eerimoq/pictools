@@ -26,20 +26,37 @@
  * This file is part of the PIC tools project.
  */
 
+#ifndef __PROGRAMMER_H__
+#define __PROGRAMMER_H__
+
 #include "simba.h"
-#include "programmer.h"
 
-int main()
-{
-    struct programmer_t programmer;
-    
-    sys_start();
+/* Protocol. */
+#define TYPE_SIZE                                           2
+#define SIZE_SIZE                                           2
+#define MAXIMUM_PAYLOAD_SIZE                             1024
+#define CRC_SIZE                                            2
 
-    programmer_init(&programmer);
-    
-    while (1) {
-        programmer_process_packet(&programmer);
-    }
+#define PAYLOAD_OFFSET                (TYPE_SIZE + SIZE_SIZE)
 
-    return (0);
-}
+struct programmer_t {
+    struct icsp_soft_driver_t icsp;
+    uint8_t buf[PAYLOAD_OFFSET + MAXIMUM_PAYLOAD_SIZE + CRC_SIZE + 2];
+    int is_connected;
+};
+
+/**
+ * Initialize a programmer.
+ *
+ * @return zero(0) or negative error code.
+ */
+int programmer_init(struct programmer_t *self_p);
+
+/**
+ * Process a packet.
+ *
+ * @return zero(0) or negative error code.
+ */
+int programmer_process_packet(struct programmer_t *self_p);
+
+#endif

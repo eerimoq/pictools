@@ -32,6 +32,7 @@
 
 test:
 	python3 setup.py test
+	$(MAKE) -C programmer/tst test
 	codespell -d $$(git ls-files | grep -v 3pp | grep -v \.bin | grep -v \.out | grep -v images)
 
 test-target:

@@ -6,5 +6,6 @@ install:
   - pip install -r requirements.txt
 script:
   - coverage run --source=pictools setup.py test
+  - make -C programmer/tst -s -j $(cat /proc/cpuinfo | grep processor | wc -l) test
 after_success:
   coveralls
