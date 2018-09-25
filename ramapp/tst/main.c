@@ -127,7 +127,7 @@ uint32_t load_flash_32(uint32_t address, size_t index)
     return (res);
 }
 
-void write_load_flash_32(uint32_t address, size_t index, uint32_t res)
+static void write_load_flash_32(uint32_t address, size_t index, uint32_t res)
 {
     harness_mock_write("load_flash_32(address)",
                        &address,
@@ -137,9 +137,20 @@ void write_load_flash_32(uint32_t address, size_t index, uint32_t res)
                        &index,
                        sizeof(index));
 
-    harness_mock_write("load_flash_32(res)",
+    harness_mock_write("load_flash_32(): return (res)",
                        &res,
                        sizeof(res));
+}
+
+static void write_cmp32(uint8_t *buf_p, uint32_t address, size_t size)
+{
+    size_t i;
+    uint32_t data;
+
+    for (i = 0; i < size / 4; i++) {
+        data = *(uint32_t *)(&buf_p[4 * i]);
+        write_load_flash_32(address, i, data);
+    }
 }
 
 int cmp8(void *buf_p, uint32_t address, size_t size)
@@ -156,12 +167,12 @@ int cmp8(void *buf_p, uint32_t address, size_t size)
     return (res);
 }
 
-void write_cmp8(void *buf_p, uint32_t address, size_t size, int res)
+static void write_cmp8(void *buf_p, uint32_t address, size_t size, int res)
 {
     harness_mock_write("cmp8(buf_p)", buf_p, size);
     harness_mock_write("cmp8(address)", &address, sizeof(address));
     harness_mock_write("cmp8(size)", &size, sizeof(size));
-    harness_mock_write("cmp8(res)", &res, sizeof(res));
+    harness_mock_write("cmp8(): return (res)", &res, sizeof(res));
 }
 
 static void write_fast_data_read(uint8_t *buf_p, size_t size)
@@ -306,12 +317,122 @@ static int test_read(void)
     return (0);
 }
 
+static int test_write(void)
+{
+    struct ramapp_t ramapp;
+    struct flash_driver_t flash;
+    uint8_t request_header[] = { 0x00, 0x04, 0x00, 0x09 };
+    uint8_t request_payload_crc[] = {
+        0x04, 0x03, 0x02, 0x01, /* Address. */
+        0x00, 0x00, 0x00, 0x01, /* Size. */
+        0xfe, /* Data. */
+        0x4c, 0xef
+    };
+    uint8_t response[] = { 0x00, 0x04, 0x00, 0x00, 0x58, 0x00 };
+    uint8_t data;
+
+    write_read_command_request(&request_header[0],
+                               &request_payload_crc[0],
+                               sizeof(request_payload_crc));
+    data = 0xfe;
+    mock_write_flash_write(0x04030201,
+                           &data,
+                           sizeof(data),
+                           sizeof(data));
+    write_cmp8(&data, 0x04030201, sizeof(data), 0);
+    write_write_command_response(&response[0],
+                                 sizeof(response));
+
+    BTASSERT(ramapp_init(&ramapp, &flash) == 0);
+    BTASSERT(ramapp_process_packet(&ramapp) == 0);
+
+    return (0);
+}
+
+static int test_fast_write_one_row(void)
+{
+    struct ramapp_t ramapp;
+    struct flash_driver_t flash;
+    uint8_t request_header[] = { 0x00, 0x6a, 0x00, 0x0c };
+    uint8_t request_payload_crc[] = {
+        0x04, 0x03, 0x02, 0x01, /* Address. */
+        0x00, 0x00, 0x01, 0x00, /* Size. */
+        0x00, 0x00, 0x8f, 0xd6, /* Crc. */
+        0x1c, 0x46
+    };
+    uint8_t response[] = { 0x00, 0x6a, 0x00, 0x00, 0xd8, 0x6a };
+    uint8_t buf[256];
+
+    write_read_command_request(&request_header[0],
+                               &request_payload_crc[0],
+                               sizeof(request_payload_crc));
+    memset(&buf[0], 0x12, sizeof(buf));
+    buf[3] = 0x21;
+    write_fast_data_read(&buf[0], sizeof(buf));
+    mock_write_flash_async_write(0x04030201,
+                                 &buf[0],
+                                 sizeof(buf),
+                                 0);
+    mock_write_flash_async_wait(0);
+    write_cmp32(&buf[0], 0x04030201, sizeof(buf));
+    write_write_command_response(&response[0],
+                                 sizeof(response));
+
+    BTASSERT(ramapp_init(&ramapp, &flash) == 0);
+    BTASSERT(ramapp_process_packet(&ramapp) == 0);
+
+    return (0);
+}
+
+static int test_fast_write_two_rows(void)
+{
+    struct ramapp_t ramapp;
+    struct flash_driver_t flash;
+    uint8_t request_header[] = { 0x00, 0x6a, 0x00, 0x0c };
+    uint8_t request_payload_crc[] = {
+        0x04, 0x03, 0x02, 0x01, /* Address. */
+        0x00, 0x00, 0x02, 0x00, /* Size. */
+        0x00, 0x00, 0x18, 0x87, /* Crc. */
+        0x19, 0x0e
+    };
+    uint8_t response[] = { 0x00, 0x6a, 0x00, 0x00, 0xd8, 0x6a };
+    uint8_t buf[256];
+    int i;
+
+    write_read_command_request(&request_header[0],
+                               &request_payload_crc[0],
+                               sizeof(request_payload_crc));
+    memset(&buf[0], 0x12, sizeof(buf));
+
+    for (i = 0; i < 2; i++) {
+        buf[3] = 0x21 + i;
+        write_fast_data_read(&buf[0], sizeof(buf));
+        mock_write_flash_async_write(0x04030201 + sizeof(buf) * i,
+                                     &buf[0],
+                                     sizeof(buf),
+                                     0);
+        mock_write_flash_async_wait(0);
+        write_cmp32(&buf[0], 0x04030201 + sizeof(buf) * i, sizeof(buf));
+    }
+
+    write_write_command_response(&response[0],
+                                 sizeof(response));
+
+    BTASSERT(ramapp_init(&ramapp, &flash) == 0);
+    BTASSERT(ramapp_process_packet(&ramapp) == 0);
+
+    return (0);
+}
+
 int main()
 {
     struct harness_testcase_t testcases[] = {
         { test_ping, "test_ping" },
         { test_erase, "test_erase" },
         { test_read, "test_read" },
+        { test_write, "test_write" },
+        { test_fast_write_one_row, "test_fast_write_one_row" },
+        { test_fast_write_two_rows, "test_fast_write_two_rows" },
         { NULL, NULL }
     };
 

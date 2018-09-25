@@ -73,6 +73,7 @@ static ssize_t fast_data_read(uint8_t *buf_p, size_t size)
 
     for (i = 0; i < number_of_words; i++) {
         data = etap_fast_data_read();
+
         buf_p[4 * i + 0] = (data >> 24);
         buf_p[4 * i + 1] = (data >> 16);
         buf_p[4 * i + 2] = (data >> 8);
@@ -95,6 +96,7 @@ static ssize_t fast_data_write(uint8_t *buf_p, size_t size)
                 | (buf_p[4 * i + 1] << 16)
                 | (buf_p[4 * i + 2] << 8)
                 | (buf_p[4 * i + 3] << 0));
+
         etap_fast_data_write(data);
     }
 
@@ -242,6 +244,11 @@ static ssize_t handle_fast_write(struct ramapp_t *self_p,
     }
 
     if (actual_crc != expected_crc) {
+#if defined(UNIT_TEST)
+        std_printf(OSTR("fast_write: actual_crc: 0x%04x, expected_crc: 0x%04x\r\n"),
+                   actual_crc,
+                   expected_crc);
+#endif
         return (-EBADCRC);
     }
 
