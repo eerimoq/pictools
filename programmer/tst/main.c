@@ -120,7 +120,8 @@ static int write_upload_ramapp(void)
 
 static int write_read_command_request(uint8_t *header_p,
                                       size_t header_size,
-                                      uint8_t *crc_p)
+                                      uint8_t *payload_crc_p,
+                                      size_t payload_crc_size)
 {
     struct time_t time;
 
@@ -130,7 +131,10 @@ static int write_read_command_request(uint8_t *header_p,
                                       header_size,
                                       &time,
                                       header_size);
-    mock_write_chan_read_with_timeout(crc_p, 2, &time, 2);
+    mock_write_chan_read_with_timeout(payload_crc_p,
+                                      payload_crc_size,
+                                      &time,
+                                      payload_crc_size);
 
     return (0);
 }
@@ -151,13 +155,15 @@ static int write_handle_connect(void)
 
 static int write_programmer_process_packet(uint8_t *header_p,
                                            size_t header_size,
-                                           uint8_t *crc_p,
+                                           uint8_t *payload_crc_p,
+                                           size_t payload_crc_size,
                                            uint8_t *response_p,
                                            size_t response_size)
 {
     write_read_command_request(header_p,
                                header_size,
-                               crc_p);
+                               payload_crc_p,
+                               payload_crc_size);
     mock_write_chan_write(response_p,
                           response_size,
                           response_size);
@@ -171,9 +177,12 @@ static int connect(struct programmer_t *programmer_p)
     uint8_t request_crc[] = { 0xf4, 0x5b };
     uint8_t response[] = { 0x00, 0x65, 0x00, 0x00, 0xf4, 0x5b };
 
+    BTASSERT(programmer_init(programmer_p) == 0);
+
     write_programmer_process_packet(&request_header[0],
                                     sizeof(request_header),
                                     &request_crc[0],
+                                    sizeof(request_crc),
                                     &response[0],
                                     sizeof(response));
     write_handle_connect();
@@ -283,6 +292,7 @@ static int test_ping(void)
     write_programmer_process_packet(&request_header[0],
                                     sizeof(request_header),
                                     &request_crc[0],
+                                    sizeof(request_crc),
                                     &response[0],
                                     sizeof(response));
 
@@ -296,7 +306,6 @@ static int test_connect(void)
 {
     struct programmer_t programmer;
 
-    BTASSERT(programmer_init(&programmer) == 0);
     BTASSERT(connect(&programmer) == 0);
 
     return (0);
@@ -311,12 +320,12 @@ static int test_connect_connected(void)
         0xff, 0xff, 0x00, 0x04, 0xff, 0xff, 0xff, 0x96, 0xed, 0x46
     };
 
-    BTASSERT(programmer_init(&programmer) == 0);
     BTASSERT(connect(&programmer) == 0);
 
     write_programmer_process_packet(&request_header[0],
                                     sizeof(request_header),
                                     &request_crc[0],
+                                    sizeof(request_crc),
                                     &response[0],
                                     sizeof(response));
 
@@ -332,12 +341,12 @@ static int test_disconnect(void)
     uint8_t request_crc[] = { 0xad, 0x0b };
     uint8_t response[] = { 0x00, 0x66, 0x00, 0x00, 0xad, 0x0b };
 
-    BTASSERT(programmer_init(&programmer) == 0);
     BTASSERT(connect(&programmer) == 0);
 
     write_programmer_process_packet(&request_header[0],
                                     sizeof(request_header),
                                     &request_crc[0],
+                                    sizeof(request_crc),
                                     &response[0],
                                     sizeof(response));
     mock_write_icsp_soft_stop(0);
@@ -353,12 +362,15 @@ static int test_disconnect_not_connected(void)
     uint8_t request_header[] = { 0x00, 0x66, 0x00, 0x00 };
     uint8_t request_crc[] = { 0xad, 0x0b };
     uint8_t response[] = {
-        0xff, 0xff, 0x00, 0x04, 0xff, 0xff, 0xff, 0x95, 0xdd, 0x25
+        0xff, 0xff, 0x00, 0x04,
+        0xff, 0xff, 0xff, 0x95, /* ENOTCONN. */
+        0xdd, 0x25
     };
 
     write_programmer_process_packet(&request_header[0],
                                     sizeof(request_header),
                                     &request_crc[0],
+                                    sizeof(request_crc),
                                     &response[0],
                                     sizeof(response));
 
@@ -378,6 +390,7 @@ static int test_reset(void)
     write_programmer_process_packet(&request_header[0],
                                     sizeof(request_header),
                                     &request_crc[0],
+                                    sizeof(request_crc),
                                     &response[0],
                                     sizeof(response));
 
@@ -403,6 +416,7 @@ static int test_bad_command_type(void)
     write_programmer_process_packet(&request_header[0],
                                     sizeof(request_header),
                                     &request_crc[0],
+                                    sizeof(request_crc),
                                     &response[0],
                                     sizeof(response));
 
@@ -424,6 +438,7 @@ static int test_bad_command_crc(void)
     write_programmer_process_packet(&request_header[0],
                                     sizeof(request_header),
                                     &request_crc[0],
+                                    sizeof(request_crc),
                                     &response[0],
                                     sizeof(response));
 
@@ -483,14 +498,14 @@ static int test_ramapp_command(void)
         0x00, 0x01, 0x00, 0x00, 0x59, 0x7a
     };
 
-    BTASSERT(programmer_init(&programmer) == 0);
     BTASSERT(connect(&programmer) == 0);
 
     write_read_command_request(&request[0],
                                4,
-                               &request[4]);
-    write_ramapp_write(&request[0], 6);
-    write_ramapp_read(&response[0], 6);
+                               &request[4],
+                               2);
+    write_ramapp_write(&request[0], sizeof(request));
+    write_ramapp_read(&response[0], sizeof(response));
     mock_write_chan_write(&response[0],
                           sizeof(response),
                           sizeof(response));
@@ -508,12 +523,12 @@ static int test_ramapp_command_fast_data_write_fail(void)
         0xff, 0xff, 0x00, 0x04, 0xff, 0xff, 0xff, 0xfe, 0x00, 0xe8
     };
 
-    BTASSERT(programmer_init(&programmer) == 0);
     BTASSERT(connect(&programmer) == 0);
 
     write_read_command_request(&request[0],
                                4,
-                               &request[4]);
+                               &request[4],
+                               2);
     mock_write_icsp_soft_fast_data_write(&request[0],
                                          4,
                                          -2);
@@ -538,6 +553,7 @@ static int test_chip_erase(void)
     write_programmer_process_packet(&request_header[0],
                                     sizeof(request_header),
                                     &request_crc[0],
+                                    sizeof(request_crc),
                                     &response[0],
                                     sizeof(response));
 
@@ -571,6 +587,86 @@ static int test_version(void)
     write_programmer_process_packet(&request_header[0],
                                     sizeof(request_header),
                                     &request_crc[0],
+                                    sizeof(request_crc),
+                                    &response[0],
+                                    sizeof(response));
+
+    BTASSERT(programmer_init(&programmer) == 0);
+    BTASSERTI(programmer_process_packet(&programmer), ==, 0);
+
+    return (0);
+}
+
+static int test_fast_write(void)
+{
+    struct programmer_t programmer;
+    uint8_t request[] = {
+        0x00, 0x6a, 0x00, 0x0c,
+        0x1d, 0x00, 0x00, 0x00, /* Address. */
+        0x00, 0x00, 0x01, 0x00, /* Size. */
+        0x12, 0x34, 0x56, 0x78, /* Crc. */
+        0x6a, 0xa9
+    };
+    uint8_t response[] = {
+        0x00, 0x6a, 0x00, 0x00, 0x00, 0x00
+    };
+    uint8_t buf[256];
+    struct time_t time;
+    uint16_t ack;
+
+    BTASSERT(connect(&programmer) == 0);
+
+    /* Request to ramapp. */
+    write_ramapp_write(&request[0], sizeof(request));
+    write_read_command_request(&request[0],
+                               4,
+                               &request[4],
+                               14);
+    time.seconds = 0;
+    time.nanoseconds = 500000000;
+
+    /* Data packet. */
+    memset(&buf[0], 1, sizeof(buf));
+    mock_write_chan_read_with_timeout(&buf[0],
+                                      sizeof(buf),
+                                      &time,
+                                      sizeof(buf));
+    write_ramapp_write(&buf[0], sizeof(buf));
+    ack = 0;
+    mock_write_chan_write(&ack, sizeof(ack), sizeof(ack));
+
+    /* Response from ramapp. */
+    write_ramapp_read(&response[0], sizeof(response));
+
+    mock_write_chan_write(&response[0],
+                          sizeof(response),
+                          sizeof(response));
+
+    BTASSERTI(programmer_process_packet(&programmer), ==, 0);
+
+    return (0);
+}
+
+static int test_fast_write_not_connected(void)
+{
+    struct programmer_t programmer;
+    uint8_t request_header[] = { 0x00, 0x6a, 0x00, 0x0c };
+    uint8_t request_payload_crc[] = {
+        0x1d, 0x00, 0x00, 0x00, /* Address. */
+        0x00, 0x00, 0x01, 0x00, /* Size. */
+        0x12, 0x34, 0x56, 0x78, /* Crc. */
+        0x6a, 0xa9
+    };
+    uint8_t response[] = {
+        0xff, 0xff, 0x00, 0x04,
+        0xff, 0xff, 0xff, 0x95, /* ENOTCONN. */
+        0xdd, 0x25
+    };
+
+    write_programmer_process_packet(&request_header[0],
+                                    sizeof(request_header),
+                                    &request_payload_crc[0],
+                                    sizeof(request_payload_crc),
                                     &response[0],
                                     sizeof(response));
 
@@ -600,6 +696,8 @@ int main()
         },
         { test_chip_erase, "test_chip_erase" },
         { test_version, "test_version" },
+        { test_fast_write, "test_fast_write" },
+        { test_fast_write_not_connected, "test_fast_write_not_connected" },
         { NULL, NULL }
     };
 
