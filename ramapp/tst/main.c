@@ -549,6 +549,54 @@ static int test_fast_write_two_rows_bad_compare(void)
     return (0);
 }
 
+static int test_bad_command(void)
+{
+    struct ramapp_t ramapp;
+    struct flash_driver_t flash;
+    uint8_t request_header[] = { 0x00, 0x99, 0x00, 0x00 };
+    uint8_t request_crc[] = { 0x62, 0x68 };
+    uint8_t response[] = {
+        0xff, 0xff, 0x00, 0x04,
+        0xff, 0xff, 0xfc, 0x15, /* Error code. */
+        0x19, 0xfe
+    };
+
+    write_read_command_request(&request_header[0],
+                               &request_crc[0],
+                               sizeof(request_crc));
+    write_write_command_response(&response[0],
+                                 sizeof(response));
+
+    BTASSERT(ramapp_init(&ramapp, &flash) == 0);
+    BTASSERT(ramapp_process_packet(&ramapp) == 0);
+
+    return (0);
+}
+
+static int test_bad_request_crc(void)
+{
+    struct ramapp_t ramapp;
+    struct flash_driver_t flash;
+    uint8_t request_header[] = { 0x00, 0x99, 0x00, 0x00 };
+    uint8_t request_crc[] = { 0x62, 0x69 };
+    uint8_t response[] = {
+        0xff, 0xff, 0x00, 0x04,
+        0xff, 0xff, 0xfc, 0x11, /* Error code. */
+        0x59, 0x7a
+    };
+
+    write_read_command_request(&request_header[0],
+                               &request_crc[0],
+                               sizeof(request_crc));
+    write_write_command_response(&response[0],
+                                 sizeof(response));
+
+    BTASSERT(ramapp_init(&ramapp, &flash) == 0);
+    BTASSERT(ramapp_process_packet(&ramapp) == 0);
+
+    return (0);
+}
+
 int main()
 {
     struct harness_testcase_t testcases[] = {
@@ -570,6 +618,8 @@ int main()
             test_fast_write_two_rows_bad_compare,
             "test_fast_write_two_rows_bad_compare"
         },
+        { test_bad_command, "test_bad_command" },
+        { test_bad_request_crc, "test_bad_request_crc" },
         { NULL, NULL }
     };
 
