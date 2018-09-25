@@ -28,6 +28,7 @@
 
 #include "simba.h"
 #include "ramapp.h"
+#include "compat.h"
 
 #define TYPE_SIZE                                           2
 #define SIZE_SIZE                                           2
@@ -44,44 +45,7 @@
 #define COMMAND_TYPE_WRITE                                  4
 #define COMMAND_TYPE_FAST_WRITE                           106
 
-#define PIC32_ETAP_FASTDATA ((volatile uint32_t *) 0xff200000)
-
 #define FLASH_ROW_SIZE                                     256
-
-#if !defined(UNIT_TEST)
-
-static inline uint32_t etap_fast_data_read()
-{
-    return (*PIC32_ETAP_FASTDATA);
-}
-
-static inline void etap_fast_data_write(uint32_t value)
-{
-    *PIC32_ETAP_FASTDATA = value;
-}
-
-static inline uint32_t load_flash_32(uint32_t address, size_t index)
-{
-    uint32_t *buf_p;
-
-    buf_p = (uint32_t *)address;
-
-    return (buf_p[index]);
-}
-
-static inline int cmp8(void *buf_p, uint32_t address, size_t size)
-{
-    return (memcmp(buf_p, (void *)(uintptr_t)address, size));
-}
-
-#else
-
-extern uint32_t etap_fast_data_read(void);
-extern void etap_fast_data_write(uint32_t value);
-extern uint32_t load_flash_32(uint32_t address, size_t index);
-extern int cmp8(void *buf_p, uint32_t address, size_t size);
-
-#endif
 
 /**
  * Faster than memcmp.
@@ -156,16 +120,14 @@ static ssize_t handle_read(struct ramapp_t *self_p,
     uint32_t address;
     size_t i;
     uint8_t *dst_p;
-    uint8_t *src_p;
 
     address = ((buf_p[0] << 24) | (buf_p[1] << 16) | (buf_p[2] << 8) | buf_p[3]);
     size = ((buf_p[4] << 24) | (buf_p[5] << 16) | (buf_p[6] << 8) | buf_p[7]);
 
     dst_p = buf_p;
-    src_p = (uint8_t *)(uintptr_t)address;
 
     for (i = 0; i < size; i++) {
-        dst_p[i] = src_p[i];
+        dst_p[i] = load_flash_8(address, i);
     }
 
     return (size);

@@ -74,6 +74,40 @@ static void write_etap_fast_data_write(uint32_t value, size_t shift)
                        sizeof(value));
 }
 
+uint8_t load_flash_8(uint32_t address, size_t index)
+{
+    uint8_t res;
+
+    harness_mock_assert("load_flash_8(address)",
+                        &address,
+                        sizeof(address));
+
+    harness_mock_assert("load_flash_8(index)",
+                        &index,
+                        sizeof(index));
+
+    harness_mock_read("load_flash_8(): return (res)",
+                      &res,
+                      sizeof(res));
+
+    return (res);
+}
+
+static void write_load_flash_8(uint32_t address, size_t index, uint8_t res)
+{
+    harness_mock_write("load_flash_8(address)",
+                       &address,
+                       sizeof(address));
+
+    harness_mock_write("load_flash_8(index)",
+                       &index,
+                       sizeof(index));
+
+    harness_mock_write("load_flash_8(): return (res)",
+                       &res,
+                       sizeof(res));
+}
+
 uint32_t load_flash_32(uint32_t address, size_t index)
 {
     uint32_t res;
@@ -243,11 +277,41 @@ static int test_erase(void)
     return (0);
 }
 
+static int test_read(void)
+{
+    struct ramapp_t ramapp;
+    struct flash_driver_t flash;
+    uint8_t request_header[] = { 0x00, 0x03, 0x00, 0x08 };
+    uint8_t request_payload_crc[] = {
+        0x04, 0x03, 0x02, 0x01, /* Address. */
+        0x00, 0x00, 0x00, 0x01, /* Size. */
+        0x33, 0x23
+    };
+    uint8_t response[] = {
+        0x00, 0x03, 0x00, 0x01,
+        0xef, /* Data. */
+        0xb5, 0x20
+    };
+
+    write_read_command_request(&request_header[0],
+                               &request_payload_crc[0],
+                               sizeof(request_payload_crc));
+    write_load_flash_8(0x04030201, 0, 0xef);
+    write_write_command_response(&response[0],
+                                 sizeof(response));
+
+    BTASSERT(ramapp_init(&ramapp, &flash) == 0);
+    BTASSERT(ramapp_process_packet(&ramapp) == 0);
+
+    return (0);
+}
+
 int main()
 {
     struct harness_testcase_t testcases[] = {
         { test_ping, "test_ping" },
         { test_erase, "test_erase" },
+        { test_read, "test_read" },
         { NULL, NULL }
     };
 
