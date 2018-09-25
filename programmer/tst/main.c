@@ -183,6 +183,65 @@ static int connect(struct programmer_t *programmer_p)
     return (0);
 }
 
+static int write_ramapp_write(uint8_t *buf_p, size_t size)
+{
+    size_t offset;
+
+    for (offset = 0; offset < size; offset += 4) {
+        if ((size - offset) >= 4) {
+            mock_write_icsp_soft_fast_data_write(&buf_p[offset],
+                                                 4,
+                                                 0);
+        } else {
+            mock_write_icsp_soft_fast_data_write(&buf_p[offset],
+                                                 size - offset,
+                                                 0);
+        }
+    }
+
+    return (0);
+}
+
+static int write_ramapp_read(uint8_t *buf_p, size_t size)
+{
+    size_t i;
+    uint32_t data;
+
+    for (i = 0; i < size / 4; i++) {
+        data = ((buf_p[4 * i + 0] << 24)
+                | (buf_p[4 * i + 1] << 16)
+                | (buf_p[4 * i + 2] << 8)
+                | (buf_p[4 * i + 3] << 0));
+        mock_write_icsp_soft_fast_data_read(&data, 0);
+    }
+
+    switch (size % 4) {
+
+    case 3:
+        data = ((buf_p[4 * i] << 24)
+                | (buf_p[4 * i + 1] << 16)
+                | (buf_p[4 * i + 2] << 8));
+        mock_write_icsp_soft_fast_data_read(&data, 0);
+        break;
+
+    case 2:
+        data = ((buf_p[4 * i] << 24)
+                | (buf_p[4 * i + 1] << 16));
+        mock_write_icsp_soft_fast_data_read(&data, 0);
+        break;
+
+    case 1:
+        data = (buf_p[4 * i] << 24);
+        mock_write_icsp_soft_fast_data_read(&data, 0);
+        break;
+
+    default:
+        break;
+    }
+
+    return (0);
+}
+
 static int test_ping(void)
 {
     uint8_t request_header[] = { 0x00, 0x64, 0x00, 0x00 };
@@ -385,6 +444,57 @@ static int test_command_read_crc_timeout(void)
     return (0);
 }
 
+static int test_ramapp_command(void)
+{
+    struct programmer_t programmer;
+    uint8_t request[] = { 0x00, 0x01, 0x00, 0x00, 0x57, 0x80 };
+    uint8_t response[] = {
+        0x00, 0x01, 0x00, 0x00, 0x59, 0x7a
+    };
+
+    BTASSERT(programmer_init(&programmer) == 0);
+    BTASSERT(connect(&programmer) == 0);
+
+    write_read_command_request(&request[0],
+                               4,
+                               &request[4]);
+    write_ramapp_write(&request[0], 6);
+    write_ramapp_read(&response[0], 6);
+    mock_write_chan_write(&response[0],
+                          sizeof(response),
+                          sizeof(response));
+
+    BTASSERTI(programmer_process_packet(&programmer), ==, 0);
+
+    return (0);
+}
+
+static int test_ramapp_command_fast_data_write_fail(void)
+{
+    struct programmer_t programmer;
+    uint8_t request[] = { 0x00, 0x01, 0x00, 0x00, 0x57, 0x80 };
+    uint8_t response[] = {
+        0xff, 0xff, 0x00, 0x04, 0xff, 0xff, 0xff, 0xfe, 0x00, 0xe8
+    };
+
+    BTASSERT(programmer_init(&programmer) == 0);
+    BTASSERT(connect(&programmer) == 0);
+
+    write_read_command_request(&request[0],
+                               4,
+                               &request[4]);
+    mock_write_icsp_soft_fast_data_write(&request[0],
+                                         4,
+                                         -2);
+    mock_write_chan_write(&response[0],
+                          sizeof(response),
+                          sizeof(response));
+
+    BTASSERTI(programmer_process_packet(&programmer), ==, 0);
+
+    return (0);
+}
+
 int main()
 {
     struct harness_testcase_t testcases[] = {
@@ -398,6 +508,11 @@ int main()
         { test_bad_command_crc, "test_bad_command_crc" },
         { test_command_read_header_timeout, "test_command_read_header_timeout" },
         { test_command_read_crc_timeout, "test_command_read_crc_timeout" },
+        { test_ramapp_command, "test_ramapp_command" },
+        {
+            test_ramapp_command_fast_data_write_fail,
+            "test_ramapp_command_fast_data_write_fail"
+        },
         { NULL, NULL }
     };
 
