@@ -282,6 +282,19 @@ static int write_chip_erase(void)
     return (0);
 }
 
+static int write_read_device_status(uint8_t status)
+{
+    uint8_t command;
+
+    write_send_command(0x20);
+    write_send_command(0xe0);
+
+    command = 0;
+    mock_write_icsp_soft_data_transfer(&status, &command, 8, 0);
+
+    return (0);
+}
+
 static int test_ping(void)
 {
     uint8_t request_header[] = { 0x00, 0x64, 0x00, 0x00 };
@@ -676,6 +689,40 @@ static int test_fast_write_not_connected(void)
     return (0);
 }
 
+static int test_device_status(void)
+{
+    struct programmer_t programmer;
+    uint8_t request_header[] = { 0x00, 0x68, 0x00, 0x00 };
+    uint8_t request_crc[] = { 0xb6, 0x0a };
+    uint8_t response[] = {
+        0x00, 0x68, 0x00, 0x01,
+        0x48, /* Status. */
+        0x37, 0xe0
+    };
+
+    write_programmer_process_packet(&request_header[0],
+                                    sizeof(request_header),
+                                    &request_crc[0],
+                                    sizeof(request_crc),
+                                    &response[0],
+                                    sizeof(response));
+
+    mock_write_icsp_soft_init(&pin_d2_dev,
+                              &pin_d3_dev,
+                              &pin_d4_dev,
+                              0);
+    mock_write_icsp_soft_start(0);
+
+    write_read_device_status(0x12);
+
+    mock_write_icsp_soft_stop(0);
+
+    BTASSERT(programmer_init(&programmer) == 0);
+    BTASSERTI(programmer_process_packet(&programmer), ==, 0);
+
+    return (0);
+}
+
 int main()
 {
     struct harness_testcase_t testcases[] = {
@@ -698,6 +745,7 @@ int main()
         { test_version, "test_version" },
         { test_fast_write, "test_fast_write" },
         { test_fast_write_not_connected, "test_fast_write_not_connected" },
+        { test_device_status, "test_device_status" },
         { NULL, NULL }
     };
 
