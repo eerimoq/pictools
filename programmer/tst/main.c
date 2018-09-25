@@ -242,6 +242,37 @@ static int write_ramapp_read(uint8_t *buf_p, size_t size)
     return (0);
 }
 
+static int write_chip_erase(void)
+{
+    struct time_t time;
+    uint8_t command;
+    uint8_t status;
+
+    write_send_command(0x20);
+    write_send_command(0xe0);
+
+    command = 0x3f;
+    status = 0xff;
+    mock_write_icsp_soft_data_transfer(&status, &command, 8, 0);
+
+    command = 0x0b;
+    status = 0x10;
+    mock_write_icsp_soft_data_transfer(&status, &command, 8, 0);
+
+    time.seconds = 1;
+    time.nanoseconds = 0;
+
+    mock_write_time_get(&time, 0);
+
+    command = 0;
+    status = 0x10;
+    mock_write_icsp_soft_data_transfer(&status, &command, 8, 0);
+
+    mock_write_time_get(&time, 0);
+
+    return (0);
+}
+
 static int test_ping(void)
 {
     uint8_t request_header[] = { 0x00, 0x64, 0x00, 0x00 };
@@ -495,6 +526,60 @@ static int test_ramapp_command_fast_data_write_fail(void)
     return (0);
 }
 
+static int test_chip_erase(void)
+{
+    struct programmer_t programmer;
+    uint8_t request_header[] = { 0x00, 0x69, 0x00, 0x00 };
+    uint8_t request_crc[] = { 0x81, 0x3a };
+    uint8_t response[] = {
+        0x00, 0x69, 0x00, 0x00, 0x81, 0x3a
+    };
+
+    write_programmer_process_packet(&request_header[0],
+                                    sizeof(request_header),
+                                    &request_crc[0],
+                                    &response[0],
+                                    sizeof(response));
+
+    mock_write_icsp_soft_init(&pin_d2_dev,
+                              &pin_d3_dev,
+                              &pin_d4_dev,
+                              0);
+    mock_write_icsp_soft_start(0);
+
+    write_chip_erase();
+
+    mock_write_icsp_soft_stop(0);
+
+    BTASSERT(programmer_init(&programmer) == 0);
+    BTASSERTI(programmer_process_packet(&programmer), ==, 0);
+
+    return (0);
+}
+
+static int test_version(void)
+{
+    struct programmer_t programmer;
+    uint8_t request_header[] = { 0x00, 0x6b, 0x00, 0x00 };
+    uint8_t request_crc[] = { 0xef, 0x5a };
+    uint8_t response[] = {
+        0x00, 0x6b, 0x00, 0x0a,
+        '0', '.', '1', '.', '2', '-', 't', 'e', 's', 't',
+        0x2a, 0x75
+    };
+
+    write_programmer_process_packet(&request_header[0],
+                                    sizeof(request_header),
+                                    &request_crc[0],
+                                    &response[0],
+                                    sizeof(response));
+
+    BTASSERT(programmer_init(&programmer) == 0);
+    BTASSERTI(programmer_process_packet(&programmer), ==, 0);
+
+    return (0);
+}
+
 int main()
 {
     struct harness_testcase_t testcases[] = {
@@ -513,6 +598,8 @@ int main()
             test_ramapp_command_fast_data_write_fail,
             "test_ramapp_command_fast_data_write_fail"
         },
+        { test_chip_erase, "test_chip_erase" },
+        { test_version, "test_version" },
         { NULL, NULL }
     };
 

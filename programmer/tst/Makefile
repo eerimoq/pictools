@@ -32,6 +32,8 @@ NAME = programmer_suite
 TYPE = suite
 BOARD ?= linux
 
+VERSION = 0.1.2-test
+
 CDEFS += UNIT_TEST
 CDEFS += CONFIG_HARNESS_MOCK_ENTRIES_MAX=50000
 
