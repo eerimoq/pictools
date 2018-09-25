@@ -28,33 +28,16 @@
 # This file is part of the PIC tools project.
 #
 
-.PHONY: programmer
+NAME = ramapp_suite
+TYPE = suite
+BOARD ?= linux
 
-test:
-	python3 setup.py test
-	$(MAKE) -C programmer/tst test
-	$(MAKE) -C ramapp/tst test
-	codespell -d $$(git ls-files | grep -v 3pp | grep -v \.bin | grep -v \.out | grep -v images)
+CDEFS += UNIT_TEST
 
-test-target:
-	python3 -u tests/target.py
+SRC += $(RAMAPP_ROOT)/ramapp.c
+SRC += $(SIMBA_ROOT)/src/hash/crc.c
+SRC += $(SIMBA_ROOT)/tst/stubs/drivers/storage/flash_mock.c
 
-release-to-pypi:
-	python3 setup.py sdist
-	python3 setup.py bdist_wheel
-	twine upload dist/*
+STUB += $(RAMAPP_ROOT)/ramapp.c:flash_*
 
-programmer:
-	cd ramapp && $(MAKE)
-	cd programmer && $(MAKE) generate_ramapp_upload_instructions_i
-	cd programmer && $(MAKE) all
-
-programmer-clean:
-	cd ramapp && $(MAKE) clean
-	cd programmer && $(MAKE) clean
-
-programmer-dist:
-	cd programmer && $(MAKE) dist
-
-programmer-upload:
-	python3 -m pictools -p /dev/arduino programmer_upload -u
+include $(SIMBA_ROOT)/make/app.mk

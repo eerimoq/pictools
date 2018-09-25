@@ -37,14 +37,12 @@ static const uint32_t ramapp_upload_instructions[] = {
 #include "../ramapp_upload_instructions.i"
 };
 
-static int write_send_command(uint8_t command)
+static void write_send_command(uint8_t command)
 {
     mock_write_icsp_soft_instruction_write(&command, 5, 0);
-
-    return (0);
 }
 
-static int write_enter_serial_execution_mode(void)
+static void write_enter_serial_execution_mode(void)
 {
     uint8_t command;
     uint8_t status;
@@ -68,12 +66,10 @@ static int write_enter_serial_execution_mode(void)
     mock_write_icsp_soft_data_write(&command, 8, 0);
 
     write_send_command(0xa0);
-
-    return (0);
 }
 
-static int write_xfer_data_32(uint32_t request,
-                              uint32_t response)
+static void write_xfer_data_32(uint32_t request,
+                               uint32_t response)
 {
     request = htonl(request);
 
@@ -81,11 +77,9 @@ static int write_xfer_data_32(uint32_t request,
                                        (uint8_t *)&request,
                                        32,
                                        0);
-
-    return (0);
 }
 
-static int write_xfer_instruction(uint32_t instruction)
+static void write_xfer_instruction(uint32_t instruction)
 {
     struct time_t time;
 
@@ -101,11 +95,9 @@ static int write_xfer_instruction(uint32_t instruction)
     write_xfer_data_32(bits_reverse_32(instruction), 0);
     write_send_command(0x50);
     write_xfer_data_32(0x0030000, 0);
-
-    return (0);
 }
 
-static int write_upload_ramapp(void)
+static void write_upload_ramapp(void)
 {
     size_t i;
 
@@ -114,14 +106,12 @@ static int write_upload_ramapp(void)
     }
 
     write_xfer_instruction(0);
-
-    return (0);
 }
 
-static int write_read_command_request(uint8_t *header_p,
-                                      size_t header_size,
-                                      uint8_t *payload_crc_p,
-                                      size_t payload_crc_size)
+static void write_read_command_request(uint8_t *header_p,
+                                       size_t header_size,
+                                       uint8_t *payload_crc_p,
+                                       size_t payload_crc_size)
 {
     struct time_t time;
 
@@ -135,11 +125,9 @@ static int write_read_command_request(uint8_t *header_p,
                                       payload_crc_size,
                                       &time,
                                       payload_crc_size);
-
-    return (0);
 }
 
-static int write_handle_connect(void)
+static void write_handle_connect(void)
 {
     mock_write_icsp_soft_init(&pin_d2_dev,
                               &pin_d3_dev,
@@ -149,16 +137,14 @@ static int write_handle_connect(void)
     write_enter_serial_execution_mode();
     write_upload_ramapp();
     write_send_command(0x70);
-
-    return (0);
 }
 
-static int write_programmer_process_packet(uint8_t *header_p,
-                                           size_t header_size,
-                                           uint8_t *payload_crc_p,
-                                           size_t payload_crc_size,
-                                           uint8_t *response_p,
-                                           size_t response_size)
+static void write_programmer_process_packet(uint8_t *header_p,
+                                            size_t header_size,
+                                            uint8_t *payload_crc_p,
+                                            size_t payload_crc_size,
+                                            uint8_t *response_p,
+                                            size_t response_size)
 {
     write_read_command_request(header_p,
                                header_size,
@@ -167,8 +153,6 @@ static int write_programmer_process_packet(uint8_t *header_p,
     mock_write_chan_write(response_p,
                           response_size,
                           response_size);
-
-    return (0);
 }
 
 static int connect(struct programmer_t *programmer_p)
@@ -192,7 +176,7 @@ static int connect(struct programmer_t *programmer_p)
     return (0);
 }
 
-static int write_ramapp_write(uint8_t *buf_p, size_t size)
+static void write_ramapp_write(uint8_t *buf_p, size_t size)
 {
     size_t offset;
 
@@ -207,11 +191,9 @@ static int write_ramapp_write(uint8_t *buf_p, size_t size)
                                                  0);
         }
     }
-
-    return (0);
 }
 
-static int write_ramapp_read(uint8_t *buf_p, size_t size)
+static void write_ramapp_read(uint8_t *buf_p, size_t size)
 {
     size_t i;
     uint32_t data;
@@ -247,11 +229,9 @@ static int write_ramapp_read(uint8_t *buf_p, size_t size)
     default:
         break;
     }
-
-    return (0);
 }
 
-static int write_chip_erase(void)
+static void write_chip_erase(void)
 {
     struct time_t time;
     uint8_t command;
@@ -278,11 +258,9 @@ static int write_chip_erase(void)
     mock_write_icsp_soft_data_transfer(&status, &command, 8, 0);
 
     mock_write_time_get(&time, 0);
-
-    return (0);
 }
 
-static int write_read_device_status(uint8_t status)
+static void write_read_device_status(uint8_t status)
 {
     uint8_t command;
 
@@ -291,8 +269,6 @@ static int write_read_device_status(uint8_t status)
 
     command = 0;
     mock_write_icsp_soft_data_transfer(&status, &command, 8, 0);
-
-    return (0);
 }
 
 static int test_ping(void)

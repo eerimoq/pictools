@@ -8,6 +8,7 @@ install:
 script:
   - coverage run --source=pictools setup.py test
   - make -C programmer/tst -s -j $(cat /proc/cpuinfo | grep processor | wc -l) test
+  - make -C ramapp/tst -s -j $(cat /proc/cpuinfo | grep processor | wc -l) test
 after_success:
   - coveralls
   - bash <(curl -s https://codecov.io/bash) -X coveragepy

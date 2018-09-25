@@ -31,6 +31,8 @@
 NAME = ramapp
 BOARD ?= defcon26_badge
 
+SRC += ramapp.c
+
 CDEFS += \
 	CONFIG_MINIMAL_SYSTEM=1 \
 	CONFIG_FLASH=1 \
