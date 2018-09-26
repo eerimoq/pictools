@@ -301,6 +301,34 @@ static void write_read_device_status(uint8_t status)
     mock_write_icsp_soft_data_transfer(&status, &command, 8, 0);
 }
 
+static void write_handle_fast_write(uint8_t *request_p,
+                                    size_t request_size,
+                                    uint8_t *response_p,
+                                    size_t response_size)
+{
+    uint8_t buf[256];
+    struct time_t time;
+    uint16_t ack;
+
+    /* Request to ramapp. */
+    write_ramapp_write(request_p, request_size);
+
+    /* Data packet. */
+    time.seconds = 0;
+    time.nanoseconds = 500000000;
+    memset(&buf[0], 1, sizeof(buf));
+    mock_write_chan_read_with_timeout(&buf[0],
+                                      sizeof(buf),
+                                      &time,
+                                      sizeof(buf));
+    write_ramapp_write(&buf[0], sizeof(buf));
+    ack = 0;
+    mock_write_chan_write(&ack, sizeof(ack), sizeof(ack));
+
+    /* Response from ramapp. */
+    write_ramapp_read(response_p, response_size);
+}
+
 static int test_ping(void)
 {
     uint8_t request_header[] = { 0x00, 0x64, 0x00, 0x00 };
@@ -714,34 +742,17 @@ static int test_fast_write(void)
     uint8_t response[] = {
         0x00, 0x6a, 0x00, 0x00, 0x00, 0x00
     };
-    uint8_t buf[256];
-    struct time_t time;
-    uint16_t ack;
 
     BTASSERT(connect(&programmer) == 0);
 
-    /* Request to ramapp. */
-    write_ramapp_write(&request[0], sizeof(request));
     write_read_command_request(&request[0],
                                4,
                                &request[4],
                                14);
-    time.seconds = 0;
-    time.nanoseconds = 500000000;
-
-    /* Data packet. */
-    memset(&buf[0], 1, sizeof(buf));
-    mock_write_chan_read_with_timeout(&buf[0],
-                                      sizeof(buf),
-                                      &time,
-                                      sizeof(buf));
-    write_ramapp_write(&buf[0], sizeof(buf));
-    ack = 0;
-    mock_write_chan_write(&ack, sizeof(ack), sizeof(ack));
-
-    /* Response from ramapp. */
-    write_ramapp_read(&response[0], sizeof(response));
-
+    write_handle_fast_write(&request[0],
+                            sizeof(request),
+                            &response[0],
+                            sizeof(response));
     mock_write_chan_write(&response[0],
                           sizeof(response),
                           sizeof(response));
@@ -776,6 +787,91 @@ static int test_fast_write_not_connected(void)
 
     BTASSERT(programmer_init(&programmer) == 0);
     BTASSERTI(programmer_process_packet(&programmer), ==, 0);
+
+    return (0);
+}
+
+static int test_fast_write_errors(void)
+{
+    struct programmer_t programmer;
+    int i;
+    struct data_t {
+        uint8_t request[18];
+        size_t request_size;
+        int precond_ok;
+        uint8_t response[10];
+    } datas[] = {
+        {
+            .request = {
+                0x00, 0x6a, 0x00, 0x08,
+                0x1d, 0x00, 0x00, 0x00, /* Address. */
+                0x00, 0x00, 0x01, 0x00, /* Size. */
+                /* CRC missing. */
+                0x19, 0x75
+            },
+            .request_size = 14,
+            .precond_ok = 0,
+            .response = {
+                0xff, 0xff, 0x00, 0x04,
+                0xff, 0xff, 0xff, 0xa6, /* -EMSGSIZE. */
+                0xdb, 0x15
+            }
+        },
+        {
+            .request = {
+                0x00, 0x6a, 0x00, 0x0c,
+                0x1d, 0x00, 0x00, 0x00, /* Address. */
+                0x00, 0x00, 0x01, 0x01, /* Bad total size. */
+                0x00, 0x00, 0x00, 0x00,
+                0x74, 0xd4
+            },
+            .request_size = 18,
+            .precond_ok = 0,
+            .response = {
+                0xff, 0xff, 0x00, 0x04,
+                0xff, 0xff, 0xff, 0xea, /* -EINVAL. */
+                0x52, 0x5d
+            }
+        },
+        {
+            .request = {
+                0x00, 0x6a, 0x00, 0x0c,
+                0x1d, 0x00, 0x00, 0x00, /* Address. */
+                0x00, 0x00, 0x00, 0x00, /* Bad total size zero. */
+                0x00, 0x00, 0x00, 0x00,
+                0x9b, 0x25
+            },
+            .request_size = 18,
+            .precond_ok = 0,
+            .response = {
+                0xff, 0xff, 0x00, 0x04,
+                0xff, 0xff, 0xff, 0xea, /* -EINVAL. */
+                0x52, 0x5d
+            }
+        }
+    };
+
+    BTASSERT(connect(&programmer) == 0);
+
+    for (i = 0; i < membersof(datas); i++) {
+        write_read_command_request(&datas[i].request[0],
+                                   4,
+                                   &datas[i].request[4],
+                                   datas[i].request_size - 4);
+
+        if (datas[i].precond_ok == 1) {
+            write_handle_fast_write(&datas[i].request[0],
+                                    datas[i].request_size,
+                                    &datas[i].response[0],
+                                    sizeof(datas[i].response));
+        }
+
+        mock_write_chan_write(&datas[i].response[0],
+                              sizeof(datas[i].response),
+                              sizeof(datas[i].response));
+
+        BTASSERTI(programmer_process_packet(&programmer), ==, 0);
+    }
 
     return (0);
 }
@@ -837,6 +933,7 @@ int main()
         { test_version, "test_version" },
         { test_fast_write, "test_fast_write" },
         { test_fast_write_not_connected, "test_fast_write_not_connected" },
+        { test_fast_write_errors, "test_fast_write_errors" },
         { test_device_status, "test_device_status" },
         { NULL, NULL }
     };
