@@ -37,9 +37,9 @@ static const uint32_t ramapp_upload_instructions[] = {
 #include "../ramapp_upload_instructions.i"
 };
 
-static void write_send_command(uint8_t command)
+static void write_send_command(uint8_t command, int res)
 {
-    mock_write_icsp_soft_instruction_write(&command, 5, 0);
+    mock_write_icsp_soft_instruction_write(&command, 5, res);
 }
 
 static void write_enter_serial_execution_mode(void)
@@ -47,8 +47,8 @@ static void write_enter_serial_execution_mode(void)
     uint8_t command;
     uint8_t status;
 
-    write_send_command(0x20);
-    write_send_command(0xe0);
+    write_send_command(0x20, 0);
+    write_send_command(0xe0, 0);
 
     command = 0;
     status = 0xff;
@@ -57,15 +57,15 @@ static void write_enter_serial_execution_mode(void)
     command = 0x8b;
     mock_write_icsp_soft_data_write(&command, 8, 0);
 
-    write_send_command(0xa0);
-    write_send_command(0x30);
-    write_send_command(0x20);
-    write_send_command(0xe0);
+    write_send_command(0xa0, 0);
+    write_send_command(0x30, 0);
+    write_send_command(0x20, 0);
+    write_send_command(0xe0, 0);
 
     command = 0x0b;
     mock_write_icsp_soft_data_write(&command, 8, 0);
 
-    write_send_command(0xa0);
+    write_send_command(0xa0, 0);
 }
 
 static void write_xfer_data_32(uint32_t request,
@@ -83,7 +83,7 @@ static void write_xfer_instruction(uint32_t instruction)
 {
     struct time_t time;
 
-    write_send_command(0x50);
+    write_send_command(0x50, 0);
 
     time.seconds = 0;
     time.nanoseconds = 500000000;
@@ -91,9 +91,9 @@ static void write_xfer_instruction(uint32_t instruction)
     write_xfer_data_32(0x0032000, 0xfffffff);
     mock_write_time_get(&time, 0);
 
-    write_send_command(0x90);
+    write_send_command(0x90, 0);
     write_xfer_data_32(bits_reverse_32(instruction), 0);
-    write_send_command(0x50);
+    write_send_command(0x50, 0);
     write_xfer_data_32(0x0030000, 0);
 }
 
@@ -136,7 +136,7 @@ static void write_handle_connect(void)
     mock_write_icsp_soft_start(0);
     write_enter_serial_execution_mode();
     write_upload_ramapp();
-    write_send_command(0x70);
+    write_send_command(0x70, 0);
 }
 
 static void write_programmer_process_packet(uint8_t *header_p,
@@ -231,22 +231,49 @@ static void write_ramapp_read(uint8_t *buf_p, size_t size)
     }
 }
 
-static void write_chip_erase(void)
+static void write_chip_erase(int mtap_sw_mtap_res,
+                             int mtap_command_res,
+                             int mchp_erase_res,
+                             int mchp_de_assert_res,
+                             int mchp_status_res)
 {
     struct time_t time;
     uint8_t command;
     uint8_t status;
 
-    write_send_command(0x20);
-    write_send_command(0xe0);
+    write_send_command(0x20, mtap_sw_mtap_res);
+
+    if (mtap_sw_mtap_res != 0) {
+        return;
+    }
+
+    write_send_command(0xe0, mtap_command_res);
+
+    if (mtap_command_res != 0) {
+        return;
+    }
 
     command = 0x3f;
     status = 0xff;
-    mock_write_icsp_soft_data_transfer(&status, &command, 8, 0);
+    mock_write_icsp_soft_data_transfer(&status,
+                                       &command,
+                                       8,
+                                       mchp_erase_res);
+
+    if (mchp_erase_res != 0) {
+        return;
+    }
 
     command = 0x0b;
     status = 0x10;
-    mock_write_icsp_soft_data_transfer(&status, &command, 8, 0);
+    mock_write_icsp_soft_data_transfer(&status,
+                                       &command,
+                                       8,
+                                       mchp_de_assert_res);
+
+    if (mchp_de_assert_res != 0) {
+        return;
+    }
 
     time.seconds = 1;
     time.nanoseconds = 0;
@@ -255,7 +282,10 @@ static void write_chip_erase(void)
 
     command = 0;
     status = 0x10;
-    mock_write_icsp_soft_data_transfer(&status, &command, 8, 0);
+    mock_write_icsp_soft_data_transfer(&status,
+                                       &command,
+                                       8,
+                                       mchp_status_res);
 
     mock_write_time_get(&time, 0);
 }
@@ -264,8 +294,8 @@ static void write_read_device_status(uint8_t status)
 {
     uint8_t command;
 
-    write_send_command(0x20);
-    write_send_command(0xe0);
+    write_send_command(0x20, 0);
+    write_send_command(0xe0, 0);
 
     command = 0;
     mock_write_icsp_soft_data_transfer(&status, &command, 8, 0);
@@ -552,12 +582,97 @@ static int test_chip_erase(void)
                               0);
     mock_write_icsp_soft_start(0);
 
-    write_chip_erase();
+    write_chip_erase(0, 0, 0, 0, 0);
 
     mock_write_icsp_soft_stop(0);
 
     BTASSERT(programmer_init(&programmer) == 0);
     BTASSERTI(programmer_process_packet(&programmer), ==, 0);
+
+    return (0);
+}
+
+static int test_chip_erase_errors(void)
+{
+    struct programmer_t programmer;
+    uint8_t request_header[] = { 0x00, 0x69, 0x00, 0x00 };
+    uint8_t request_crc[] = { 0x81, 0x3a };
+    struct data_t {
+        int mtap_sw_mtap_res;
+        int mtap_command_res;
+        int mchp_erase_res;
+        int mchp_de_assert_res;
+        int mchp_status_res;
+        uint8_t response[10];
+    } datas[] = {
+        {
+            -1, 0, 0, 0, 0,
+            .response = {
+                0xff, 0xff, 0x00, 0x04,
+                0xff, 0xff, 0xff, 0xff, /* Error code. */
+                0x10, 0xc9
+            }
+        },
+        {
+            0, -2, 0, 0, 0,
+            .response = {
+                0xff, 0xff, 0x00, 0x04,
+                0xff, 0xff, 0xff, 0xfe, /* Error code. */
+                0x00, 0xe8
+            }
+        },
+        {
+            0, 0, -3, 0, 0,
+            .response = {
+                0xff, 0xff, 0x00, 0x04,
+                0xff, 0xff, 0xff, 0xfd, /* Error code. */
+                0x30, 0x8b
+            }
+        },
+        {
+            0, 0, 0, -4, 0,
+            .response = {
+                0xff, 0xff, 0x00, 0x04,
+                0xff, 0xff, 0xff, 0xfc, /* Error code. */
+                0x20, 0xaa
+            }
+        },
+        {
+            0, 0, 0, 0, -5,
+            .response = {
+                0xff, 0xff, 0x00, 0x04,
+                0xff, 0xff, 0xff, 0xfb, /* Error code. */
+                0x50, 0x4d
+            }
+        },
+    };
+    int i;
+
+    for (i = 0; i < membersof(datas); i++) {
+        write_programmer_process_packet(&request_header[0],
+                                        sizeof(request_header),
+                                        &request_crc[0],
+                                        sizeof(request_crc),
+                                        &datas[i].response[0],
+                                        sizeof(datas[i].response));
+
+        mock_write_icsp_soft_init(&pin_d2_dev,
+                                  &pin_d3_dev,
+                                  &pin_d4_dev,
+                                  0);
+        mock_write_icsp_soft_start(0);
+
+        write_chip_erase(datas[i].mtap_sw_mtap_res,
+                         datas[i].mtap_command_res,
+                         datas[i].mchp_erase_res,
+                         datas[i].mchp_de_assert_res,
+                         datas[i].mchp_status_res);
+
+        mock_write_icsp_soft_stop(0);
+
+        BTASSERT(programmer_init(&programmer) == 0);
+        BTASSERTI(programmer_process_packet(&programmer), ==, 0);
+    }
 
     return (0);
 }
@@ -718,6 +833,7 @@ int main()
             "test_ramapp_command_fast_data_write_fail"
         },
         { test_chip_erase, "test_chip_erase" },
+        { test_chip_erase_errors, "test_chip_erase_errors" },
         { test_version, "test_version" },
         { test_fast_write, "test_fast_write" },
         { test_fast_write_not_connected, "test_fast_write_not_connected" },
