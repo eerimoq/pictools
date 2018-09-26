@@ -32,7 +32,7 @@
 
 NAME = programmer
 BOARD ?= arduino_due
-VERSION ?= 0.9.0
+VERSION ?= 0.10.0
 
 SRC += programmer.c
 SRC += descriptors.c
