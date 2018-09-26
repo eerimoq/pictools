@@ -11,6 +11,7 @@ Welcome to the PIC tools documentation!
 
 |buildstatus|_
 |coverage|_
+|codecov|_
 
 `PIC tools` is a collection of tools to ease PIC software
 development. PIC is family of microcontrollers made by `Microchip`_.
@@ -401,6 +402,9 @@ of them:
 
 .. |coverage| image:: https://coveralls.io/repos/github/eerimoq/pictools/badge.svg?branch=master
 .. _coverage: https://coveralls.io/github/eerimoq/pictools
+
+.. |codecov| image:: https://codecov.io/gh/eerimoq/pictools/branch/master/graph/badge.svg
+.. _codecov: https://codecov.io/gh/eerimoq/pictools
 
 .. _programmer/dist: https://github.com/eerimoq/pictools/tree/master/programmer/dist
 
