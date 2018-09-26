@@ -376,7 +376,7 @@ static ssize_t ramapp_read(struct programmer_t *self_p, uint8_t *buf_p)
     res = icsp_soft_fast_data_read(&self_p->icsp, &data);
 
     if (res != 0) {
-        return (-EPROTO);
+        return (res);
     }
 
     buf_p[0] = (data >> 24);
@@ -397,7 +397,7 @@ static ssize_t ramapp_read(struct programmer_t *self_p, uint8_t *buf_p)
         res = icsp_soft_fast_data_read(&self_p->icsp, &data);
 
         if (res != 0) {
-            return (-EPROTO);
+            return (res);
         }
 
         buf_p[4 * i + 4] = (data >> 24);

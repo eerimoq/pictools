@@ -176,58 +176,70 @@ static int connect(struct programmer_t *programmer_p)
     return (0);
 }
 
-static void write_ramapp_write(uint8_t *buf_p, size_t size)
+static void write_ramapp_write(uint8_t *buf_p, size_t size, int res)
 {
     size_t offset;
 
-    for (offset = 0; offset < size; offset += 4) {
-        if ((size - offset) >= 4) {
-            mock_write_icsp_soft_fast_data_write(&buf_p[offset],
-                                                 4,
-                                                 0);
-        } else {
-            mock_write_icsp_soft_fast_data_write(&buf_p[offset],
-                                                 size - offset,
-                                                 0);
+    if (res >= 0) {
+        for (offset = 0; offset < size; offset += 4) {
+            if ((size - offset) >= 4) {
+                mock_write_icsp_soft_fast_data_write(&buf_p[offset],
+                                                     4,
+                                                     0);
+            } else {
+                mock_write_icsp_soft_fast_data_write(&buf_p[offset],
+                                                     size - offset,
+                                                     0);
+            }
         }
+    } else {
+        mock_write_icsp_soft_fast_data_write(
+            &buf_p[0],
+            size >= 4 ? 4 : size,
+            res);
     }
 }
 
-static void write_ramapp_read(uint8_t *buf_p, size_t size)
+static void write_ramapp_read(uint8_t *buf_p, size_t size, ssize_t res)
 {
     size_t i;
     uint32_t data;
 
-    for (i = 0; i < size / 4; i++) {
-        data = ((buf_p[4 * i + 0] << 24)
-                | (buf_p[4 * i + 1] << 16)
-                | (buf_p[4 * i + 2] << 8)
-                | (buf_p[4 * i + 3] << 0));
-        mock_write_icsp_soft_fast_data_read(&data, 0);
-    }
+    if (res >= 0) {
+        for (i = 0; i < size / 4; i++) {
+            data = ((buf_p[4 * i + 0] << 24)
+                    | (buf_p[4 * i + 1] << 16)
+                    | (buf_p[4 * i + 2] << 8)
+                    | (buf_p[4 * i + 3] << 0));
+            mock_write_icsp_soft_fast_data_read(&data, 0);
+        }
 
-    switch (size % 4) {
+        switch (size % 4) {
 
-    case 3:
-        data = ((buf_p[4 * i] << 24)
-                | (buf_p[4 * i + 1] << 16)
-                | (buf_p[4 * i + 2] << 8));
-        mock_write_icsp_soft_fast_data_read(&data, 0);
-        break;
+        case 3:
+            data = ((buf_p[4 * i] << 24)
+                    | (buf_p[4 * i + 1] << 16)
+                    | (buf_p[4 * i + 2] << 8));
+            mock_write_icsp_soft_fast_data_read(&data, 0);
+            break;
 
-    case 2:
-        data = ((buf_p[4 * i] << 24)
-                | (buf_p[4 * i + 1] << 16));
-        mock_write_icsp_soft_fast_data_read(&data, 0);
-        break;
+        case 2:
+            data = ((buf_p[4 * i] << 24)
+                    | (buf_p[4 * i + 1] << 16));
+            mock_write_icsp_soft_fast_data_read(&data, 0);
+            break;
 
-    case 1:
-        data = (buf_p[4 * i] << 24);
-        mock_write_icsp_soft_fast_data_read(&data, 0);
-        break;
+        case 1:
+            data = (buf_p[4 * i] << 24);
+            mock_write_icsp_soft_fast_data_read(&data, 0);
+            break;
 
-    default:
-        break;
+        default:
+            break;
+        }
+    } else {
+        data = 0;
+        mock_write_icsp_soft_fast_data_read(&data, res);
     }
 }
 
@@ -303,6 +315,10 @@ static void write_read_device_status(uint8_t status)
 
 static void write_handle_fast_write(uint8_t *request_p,
                                     size_t request_size,
+                                    int forward_ramapp_write_res,
+                                    int chan_read_with_timeout_res,
+                                    int ramapp_write_res,
+                                    int ramapp_read_res,
                                     uint8_t *response_p,
                                     size_t response_size)
 {
@@ -311,7 +327,11 @@ static void write_handle_fast_write(uint8_t *request_p,
     uint16_t ack;
 
     /* Request to ramapp. */
-    write_ramapp_write(request_p, request_size);
+    write_ramapp_write(request_p, request_size, forward_ramapp_write_res);
+
+    if (forward_ramapp_write_res != request_size) {
+        return;
+    }
 
     /* Data packet. */
     time.seconds = 0;
@@ -320,13 +340,23 @@ static void write_handle_fast_write(uint8_t *request_p,
     mock_write_chan_read_with_timeout(&buf[0],
                                       sizeof(buf),
                                       &time,
-                                      sizeof(buf));
-    write_ramapp_write(&buf[0], sizeof(buf));
+                                      chan_read_with_timeout_res);
+
+    if (chan_read_with_timeout_res != sizeof(buf)) {
+        return;
+    }
+
+    write_ramapp_write(&buf[0], sizeof(buf), ramapp_write_res);
+
+    if (ramapp_write_res != sizeof(buf)) {
+        return;
+    }
+
     ack = 0;
     mock_write_chan_write(&ack, sizeof(ack), sizeof(ack));
 
     /* Response from ramapp. */
-    write_ramapp_read(response_p, response_size);
+    write_ramapp_read(response_p, response_size, ramapp_read_res);
 }
 
 static int test_ping(void)
@@ -551,8 +581,8 @@ static int test_ramapp_command(void)
                                4,
                                &request[4],
                                2);
-    write_ramapp_write(&request[0], sizeof(request));
-    write_ramapp_read(&response[0], sizeof(response));
+    write_ramapp_write(&request[0], sizeof(request), sizeof(request));
+    write_ramapp_read(&response[0], sizeof(response), sizeof(response));
     mock_write_chan_write(&response[0],
                           sizeof(response),
                           sizeof(response));
@@ -751,6 +781,10 @@ static int test_fast_write(void)
                                14);
     write_handle_fast_write(&request[0],
                             sizeof(request),
+                            sizeof(request),
+                            256,
+                            256,
+                            256,
                             &response[0],
                             sizeof(response));
     mock_write_chan_write(&response[0],
@@ -799,6 +833,10 @@ static int test_fast_write_errors(void)
         uint8_t request[18];
         size_t request_size;
         int precond_ok;
+        int forward_ramapp_write_res;
+        int chan_read_with_timeout_res;
+        int ramapp_write_res;
+        int ramapp_read_res;
         uint8_t response[10];
     } datas[] = {
         {
@@ -848,6 +886,86 @@ static int test_fast_write_errors(void)
                 0xff, 0xff, 0xff, 0xea, /* -EINVAL. */
                 0x52, 0x5d
             }
+        },
+        {
+            .request = {
+                0x00, 0x6a, 0x00, 0x0c,
+                0x1d, 0x00, 0x00, 0x00, /* Address. */
+                0x00, 0x00, 0x01, 0x00, /* Size. */
+                0x00, 0x00, 0x00, 0x00, /* Crc. */
+                0xde, 0x85
+            },
+            .request_size = 18,
+            .precond_ok = 1,
+            .forward_ramapp_write_res = -5,
+            .chan_read_with_timeout_res = 256,
+            .ramapp_write_res = 256,
+            .ramapp_read_res = 256,
+            .response = {
+                0xff, 0xff, 0x00, 0x04,
+                0xff, 0xff, 0xff, 0xfb, /* -5. */
+                0x50, 0x4d
+            }
+        },
+        {
+            .request = {
+                0x00, 0x6a, 0x00, 0x0c,
+                0x1d, 0x00, 0x00, 0x00, /* Address. */
+                0x00, 0x00, 0x01, 0x00, /* Size. */
+                0x00, 0x00, 0x00, 0x00, /* Crc. */
+                0xde, 0x85
+            },
+            .request_size = 18,
+            .precond_ok = 1,
+            .forward_ramapp_write_res = 18,
+            .chan_read_with_timeout_res = -1,
+            .ramapp_write_res = 256,
+            .ramapp_read_res = 256,
+            .response = {
+                0xff, 0xff, 0x00, 0x04,
+                0xff, 0xff, 0xff, 0x92, /* -ETIMEDOUT. */
+                0xad, 0xc2
+            }
+        },
+        {
+            .request = {
+                0x00, 0x6a, 0x00, 0x0c,
+                0x1d, 0x00, 0x00, 0x00, /* Address. */
+                0x00, 0x00, 0x01, 0x00, /* Size. */
+                0x00, 0x00, 0x00, 0x00, /* Crc. */
+                0xde, 0x85
+            },
+            .request_size = 18,
+            .precond_ok = 1,
+            .forward_ramapp_write_res = 18,
+            .chan_read_with_timeout_res = 256,
+            .ramapp_write_res = -6,
+            .ramapp_read_res = 256,
+            .response = {
+                0xff, 0xff, 0x00, 0x04,
+                0xff, 0xff, 0xff, 0xfa, /* -6. */
+                0x40, 0x6c
+            }
+        },
+        {
+            .request = {
+                0x00, 0x6a, 0x00, 0x0c,
+                0x1d, 0x00, 0x00, 0x00, /* Address. */
+                0x00, 0x00, 0x01, 0x00, /* Size. */
+                0x00, 0x00, 0x00, 0x00, /* Crc. */
+                0xde, 0x85
+            },
+            .request_size = 18,
+            .precond_ok = 1,
+            .forward_ramapp_write_res = 18,
+            .chan_read_with_timeout_res = 256,
+            .ramapp_write_res = 256,
+            .ramapp_read_res = -7,
+            .response = {
+                0xff, 0xff, 0x00, 0x04,
+                0xff, 0xff, 0xff, 0xf9, /* -7. */
+                0x70, 0x0f
+            }
         }
     };
 
@@ -862,6 +980,10 @@ static int test_fast_write_errors(void)
         if (datas[i].precond_ok == 1) {
             write_handle_fast_write(&datas[i].request[0],
                                     datas[i].request_size,
+                                    datas[i].forward_ramapp_write_res,
+                                    datas[i].chan_read_with_timeout_res,
+                                    datas[i].ramapp_write_res,
+                                    datas[i].ramapp_read_res,
                                     &datas[i].response[0],
                                     sizeof(datas[i].response));
         }
