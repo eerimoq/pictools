@@ -80,7 +80,7 @@ Installation
       .. code-block:: text
 
          > pictools --port /dev/arduino programmer_upload
-         Uploading programmer application version 0.9.0.
+         Uploading programmer application version 0.10.0.
          Erase flash
          Write 23504 bytes to flash
          [==============================] 100% (92/92 pages)
@@ -104,7 +104,7 @@ Installation
       .. code-block:: text
 
          > pictools --port COM5 programmer_upload --bossac-path 'c:\Users\erik\Documents\ArduinoData\packages\arduino\tools\bossac\1.6.1-arduino'
-         Uploading programmer application version 0.9.0.
+         Uploading programmer application version 0.10.0.
          Erase flash
          Write 23504 bytes to flash
          [==============================] 100% (92/92 pages)
@@ -172,13 +172,10 @@ Read program flash, boot flash and configuration memory.
    Programmer is alive.
    PIC is alive.
    Reading 0x1d000000-0x1d040000.
-   100%|██████████████████████████| 262144/262144 [00:04<00:00, 61062.96 bytes/s]
+   100%|██████████████████████████| 262144/262144 [00:04<00:00, 61164.56 bytes/s]
    Read complete.
-   Reading 0x1fc00000-0x1fc01700.
-   100%|██████████████████████████████| 5888/5888 [00:00<00:00, 59621.36 bytes/s]
-   Read complete.
-   Reading 0x1fc01700-0x1fc01800.
-   100%|████████████████████████████████| 256/256 [00:00<00:00, 54662.82 bytes/s]
+   Reading 0x1fc00000-0x1fc01800.
+   100%|██████████████████████████████| 6144/6144 [00:00<00:00, 59445.91 bytes/s]
    Read complete.
 
 Erase a flash range
@@ -309,7 +306,7 @@ Read the programmer software version from the programmer.
 
    > pictools --port /dev/arduino programmer_version
    Programmer is alive.
-   0.9.0
+   0.10.0
 
 Ping the PIC
 --------------
@@ -340,12 +337,12 @@ for PIC32MM0256GPM064 can be seen below.
    Chip erase complete.
    Connected to PIC.
    Writing /home/erik/workspace/pictools/zeros.s19 to flash.
-   100%|██████████████████████████| 268288/268288 [00:04<00:00, 66317.50 bytes/s]
+   100%|██████████████████████████| 268288/268288 [00:03<00:00, 67785.34 bytes/s]
    Write complete.
-
-   real    0m4.635s
-   user    0m0.486s
-   sys     0m0.073s
+   
+   real    0m4.565s
+   user    0m0.453s
+   sys     0m0.046s
 
 +-------------------+-------------+------------+----------------------------+
 | MCU               | Memory size | Write time | Comment                    |
@@ -372,7 +369,7 @@ for PIC32MM0256GPM064 can be seen below.
 +-------------------+-------------+------------+----------------------------+
 | PIC32MM0128GPM064 |        134k | Not tested |                            |
 +-------------------+-------------+------------+----------------------------+
-| PIC32MM0256GPM064 |        262k |      4.7 s |                            |
+| PIC32MM0256GPM064 |        262k |      4.6 s |                            |
 +-------------------+-------------+------------+----------------------------+
 
 Similar projects
