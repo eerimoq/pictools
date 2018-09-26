@@ -782,7 +782,7 @@ def do_flash_write(args):
 
         # Fast chunks.
         for address, data in fast_chunks:
-            header = struct.pack('>III', address, len(data), crc_ccitt(data))
+            header = struct.pack('>IIH', address, len(data), crc_ccitt(data))
             send_command(serial_connection,
                          PROGRAMMER_COMMAND_TYPE_FAST_WRITE,
                          header)

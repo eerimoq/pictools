@@ -77,7 +77,7 @@
 #define COMMAND_TYPE_VERSION                              107
 
 /* Packet sizes. */
-#define PACKET_FAST_WRITE_REQUEST_SIZE                     18
+#define PACKET_FAST_WRITE_REQUEST_SIZE                     16
 #define PACKET_FAST_WRITE_DATA_SIZE                       256
 
 #define CTRL_TIMEOUT_NS                             500000000

@@ -172,10 +172,7 @@ static ssize_t handle_fast_write(struct ramapp_t *self_p,
 
     address = ((buf_p[0] << 24) | (buf_p[1] << 16) | (buf_p[2] << 8) | buf_p[3]);
     size = ((buf_p[4] << 24) | (buf_p[5] << 16) | (buf_p[6] << 8) | buf_p[7]);
-    expected_crc = ((buf_p[8] << 24)
-                    | (buf_p[9] << 16)
-                    | (buf_p[10] << 8)
-                    | (buf_p[11] << 0));
+    expected_crc = ((buf_p[8] << 8) | (buf_p[9] << 0));
 
     /* Start the first row. */
     fast_data_read(&buf[0][0], FLASH_ROW_SIZE);

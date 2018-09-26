@@ -112,13 +112,13 @@ Start fast write packet. The response to this packet is sent after all
 data packets have been received.
 
 Address must be aligned on a 256 bytes boundary, a row, and size must
-be a multiple of 256 bytes. Crc is a 32 bits CRC of all data packets
+be a multiple of 256 bytes. Crc is a 16 bits CRC of all data packets
 combined.
 
 .. code-block:: text
 
    +-----+----+------------+---------+--------+-----+
-   | 106 | 12 | 4b address | 4b size | 4b crc | crc |
+   | 106 | 12 | 4b address | 4b size | 2b crc | crc |
    +-----+----+------------+---------+--------+-----+
 
 Data packet. Contains data for one flash row.

@@ -117,6 +117,7 @@ static void write_read_command_request(uint8_t *header_p,
 
     time.seconds = 0;
     time.nanoseconds = 500000000;
+
     mock_write_chan_read_with_timeout(header_p,
                                       header_size,
                                       &time,
@@ -763,11 +764,11 @@ static int test_fast_write(void)
 {
     struct programmer_t programmer;
     uint8_t request[] = {
-        0x00, 0x6a, 0x00, 0x0c,
+        0x00, 0x6a, 0x00, 0x0a,
         0x1d, 0x00, 0x00, 0x00, /* Address. */
         0x00, 0x00, 0x01, 0x00, /* Size. */
-        0x12, 0x34, 0x56, 0x78, /* Crc. */
-        0x6a, 0xa9
+        0x12, 0x34, /* Crc. */
+        0x24, 0xac
     };
     uint8_t response[] = {
         0x00, 0x6a, 0x00, 0x00, 0x00, 0x00
@@ -778,7 +779,7 @@ static int test_fast_write(void)
     write_read_command_request(&request[0],
                                4,
                                &request[4],
-                               14);
+                               12);
     write_handle_fast_write(&request[0],
                             sizeof(request),
                             sizeof(request),
@@ -799,12 +800,12 @@ static int test_fast_write(void)
 static int test_fast_write_not_connected(void)
 {
     struct programmer_t programmer;
-    uint8_t request_header[] = { 0x00, 0x6a, 0x00, 0x0c };
+    uint8_t request_header[] = { 0x00, 0x6a, 0x00, 0x0a };
     uint8_t request_payload_crc[] = {
         0x1d, 0x00, 0x00, 0x00, /* Address. */
         0x00, 0x00, 0x01, 0x00, /* Size. */
-        0x12, 0x34, 0x56, 0x78, /* Crc. */
-        0x6a, 0xa9
+        0x12, 0x34, /* Crc. */
+        0x24, 0xac
     };
     uint8_t response[] = {
         0xff, 0xff, 0x00, 0x04,
@@ -830,7 +831,7 @@ static int test_fast_write_errors(void)
     struct programmer_t programmer;
     int i;
     struct data_t {
-        uint8_t request[18];
+        uint8_t request[16];
         size_t request_size;
         int precond_ok;
         int forward_ramapp_write_res;
@@ -857,13 +858,13 @@ static int test_fast_write_errors(void)
         },
         {
             .request = {
-                0x00, 0x6a, 0x00, 0x0c,
+                0x00, 0x6a, 0x00, 0x0a,
                 0x1d, 0x00, 0x00, 0x00, /* Address. */
                 0x00, 0x00, 0x01, 0x01, /* Bad total size. */
-                0x00, 0x00, 0x00, 0x00,
-                0x74, 0xd4
+                0x00, 0x00, /* Crc. */
+                0x00, 0x5a
             },
-            .request_size = 18,
+            .request_size = 16,
             .precond_ok = 0,
             .response = {
                 0xff, 0xff, 0x00, 0x04,
@@ -873,13 +874,13 @@ static int test_fast_write_errors(void)
         },
         {
             .request = {
-                0x00, 0x6a, 0x00, 0x0c,
+                0x00, 0x6a, 0x00, 0x0a,
                 0x1d, 0x00, 0x00, 0x00, /* Address. */
                 0x00, 0x00, 0x00, 0x00, /* Bad total size zero. */
-                0x00, 0x00, 0x00, 0x00,
-                0x9b, 0x25
+                0x00, 0x00, /* Crc. */
+                0x41, 0xde
             },
-            .request_size = 18,
+            .request_size = 16,
             .precond_ok = 0,
             .response = {
                 0xff, 0xff, 0x00, 0x04,
@@ -889,13 +890,13 @@ static int test_fast_write_errors(void)
         },
         {
             .request = {
-                0x00, 0x6a, 0x00, 0x0c,
+                0x00, 0x6a, 0x00, 0x0a,
                 0x1d, 0x00, 0x00, 0x00, /* Address. */
                 0x00, 0x00, 0x01, 0x00, /* Size. */
-                0x00, 0x00, 0x00, 0x00, /* Crc. */
-                0xde, 0x85
+                0x00, 0x00, /* Crc. */
+                0x37, 0x6a
             },
-            .request_size = 18,
+            .request_size = 16,
             .precond_ok = 1,
             .forward_ramapp_write_res = -5,
             .chan_read_with_timeout_res = 256,
@@ -909,15 +910,15 @@ static int test_fast_write_errors(void)
         },
         {
             .request = {
-                0x00, 0x6a, 0x00, 0x0c,
+                0x00, 0x6a, 0x00, 0x0a,
                 0x1d, 0x00, 0x00, 0x00, /* Address. */
                 0x00, 0x00, 0x01, 0x00, /* Size. */
-                0x00, 0x00, 0x00, 0x00, /* Crc. */
-                0xde, 0x85
+                0x00, 0x00, /* Crc. */
+                0x37, 0x6a
             },
-            .request_size = 18,
+            .request_size = 16,
             .precond_ok = 1,
-            .forward_ramapp_write_res = 18,
+            .forward_ramapp_write_res = 16,
             .chan_read_with_timeout_res = -1,
             .ramapp_write_res = 256,
             .ramapp_read_res = 256,
@@ -929,15 +930,15 @@ static int test_fast_write_errors(void)
         },
         {
             .request = {
-                0x00, 0x6a, 0x00, 0x0c,
+                0x00, 0x6a, 0x00, 0x0a,
                 0x1d, 0x00, 0x00, 0x00, /* Address. */
                 0x00, 0x00, 0x01, 0x00, /* Size. */
-                0x00, 0x00, 0x00, 0x00, /* Crc. */
-                0xde, 0x85
+                0x00, 0x00, /* Crc. */
+                0x37, 0x6a
             },
-            .request_size = 18,
+            .request_size = 16,
             .precond_ok = 1,
-            .forward_ramapp_write_res = 18,
+            .forward_ramapp_write_res = 16,
             .chan_read_with_timeout_res = 256,
             .ramapp_write_res = -6,
             .ramapp_read_res = 256,
@@ -949,15 +950,15 @@ static int test_fast_write_errors(void)
         },
         {
             .request = {
-                0x00, 0x6a, 0x00, 0x0c,
+                0x00, 0x6a, 0x00, 0x0a,
                 0x1d, 0x00, 0x00, 0x00, /* Address. */
                 0x00, 0x00, 0x01, 0x00, /* Size. */
-                0x00, 0x00, 0x00, 0x00, /* Crc. */
-                0xde, 0x85
+                0x00, 0x00, /* Crc. */
+                0x37, 0x6a
             },
-            .request_size = 18,
+            .request_size = 16,
             .precond_ok = 1,
-            .forward_ramapp_write_res = 18,
+            .forward_ramapp_write_res = 16,
             .chan_read_with_timeout_res = 256,
             .ramapp_write_res = 256,
             .ramapp_read_res = -7,

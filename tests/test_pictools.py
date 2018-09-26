@@ -143,7 +143,7 @@ def flash_write_fast_read():
 
 
 def flash_write_fast_write(address, size, data_crc, crc):
-    payload = struct.pack('>III', address, size, data_crc)
+    payload = struct.pack('>IIH', address, size, data_crc)
     header = b'\x00\x6a' + struct.pack('>H', len(payload))
     footer = struct.pack('>H', crc)
 
@@ -348,7 +348,7 @@ class PicToolsTest(unittest.TestCase):
                 programmer_ping_write(),
                 connect_write(),
                 ping_write(),
-                flash_write_fast_write(0x1d000000, 512, 0x9d6f, 0xe39b),
+                flash_write_fast_write(0x1d000000, 512, 0x9d6f, 0x5f48),
                 flash_write_fast_data_write(chunks[0]),
                 flash_write_fast_data_write(chunks[1])
             ])
@@ -410,7 +410,7 @@ class PicToolsTest(unittest.TestCase):
             programmer_ping_write(),
             connect_write(),
             ping_write(),
-            flash_write_fast_write(0x1d000000, 256, 0x3fbd, 0xbd58),
+            flash_write_fast_write(0x1d000000, 256, 0x3fbd, 0x54b7),
             flash_write_fast_data_write(chunk)
         ]
 
