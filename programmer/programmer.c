@@ -502,6 +502,10 @@ static ssize_t handle_connect(struct programmer_t *self_p,
 
     res = send_command(&self_p->icsp, ETAP_FASTDATA);
 
+    if (res != 0) {
+        return (res);
+    }
+
     self_p->is_connected = 1;
 
     return (res);
