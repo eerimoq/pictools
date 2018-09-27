@@ -8,6 +8,8 @@ About
 `PIC tools` is a collection of tools to ease PIC software
 development. PIC is family of microcontrollers made by `Microchip`_.
 
+`PIC tools` is implemented in `Python 3` and `C`.
+
 Features:
 
 - A PIC programmer based on an `Arduino Due`_. Today only the

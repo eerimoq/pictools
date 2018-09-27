@@ -16,6 +16,8 @@ Welcome to the PIC tools documentation!
 `PIC tools` is a collection of tools to ease PIC software
 development. PIC is family of microcontrollers made by `Microchip`_.
 
+`PIC tools` is implemented in `Python 3` and `C`.
+
 Features:
 
 - A PIC programmer based on an `Arduino Due`_. Today only the
@@ -56,11 +58,11 @@ programmed.
 Installation
 ============
 
-#. Install pictools.
+#. Install pictools for `Python 3`.
 
    .. code-block:: python
 
-      pip install pictools
+      pip3 install pictools
 
 #. Connect the `Arduino Due`_ programming USB port to the PC.
 
