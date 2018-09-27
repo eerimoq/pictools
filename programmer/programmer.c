@@ -65,6 +65,14 @@
 #define MCHP_DE_ASSERT_RST               bits_reverse_8(0xd0)
 #define MCHP_ERASE                       bits_reverse_8(0xfc)
 
+/* Protocol. */
+#define TYPE_SIZE                                           2
+#define SIZE_SIZE                                           2
+#define MAXIMUM_PAYLOAD_SIZE                             1024
+#define CRC_SIZE                                            2
+
+#define PAYLOAD_OFFSET                (TYPE_SIZE + SIZE_SIZE)
+
 /* Command types. */
 #define COMMAND_TYPE_FAILED                                -1
 #define COMMAND_TYPE_PING                                 100
@@ -831,14 +839,15 @@ int programmer_init(struct programmer_t *self_p)
 int programmer_process_packet(struct programmer_t *self_p)
 {
     ssize_t size;
+    uint8_t buf[PAYLOAD_OFFSET + MAXIMUM_PAYLOAD_SIZE + CRC_SIZE + 2];
 
-    size = read_command_request(&self_p->buf[0]);
+    size = read_command_request(&buf[0]);
 
     if (size >= 0) {
-        size = handle_command(self_p, &self_p->buf[0], size);
+        size = handle_command(self_p, &buf[0], size);
 
         if (size > 0) {
-            size = write_command_response(&self_p->buf[0], size);
+            size = write_command_response(&buf[0], size);
         }
     }
 

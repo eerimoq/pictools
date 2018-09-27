@@ -31,17 +31,8 @@
 
 #include "simba.h"
 
-/* Protocol. */
-#define TYPE_SIZE                                           2
-#define SIZE_SIZE                                           2
-#define MAXIMUM_PAYLOAD_SIZE                             1024
-#define CRC_SIZE                                            2
-
-#define PAYLOAD_OFFSET                (TYPE_SIZE + SIZE_SIZE)
-
 struct programmer_t {
     struct icsp_soft_driver_t icsp;
-    uint8_t buf[PAYLOAD_OFFSET + MAXIMUM_PAYLOAD_SIZE + CRC_SIZE + 2];
     int is_connected;
 };
 
