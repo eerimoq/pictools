@@ -45,7 +45,7 @@
 #define COMMAND_TYPE_WRITE                                  4
 #define COMMAND_TYPE_FAST_WRITE                           106
 
-#define FLASH_ROW_SIZE                                     256
+#define FLASH_ROW_SIZE                                    256
 
 /**
  * Faster than memcmp.
