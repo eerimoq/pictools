@@ -495,6 +495,42 @@ static int test_fast_write_one_row_bad_compare(void)
     return (0);
 }
 
+static int test_fast_write_one_row_bad_async_write(void)
+{
+    struct ramapp_t ramapp;
+    struct flash_driver_t flash;
+    uint8_t request_header[] = { 0x00, 0x6a, 0x00, 0x0a };
+    uint8_t request_payload_crc[] = {
+        0x04, 0x03, 0x02, 0x01, /* Address. */
+        0x00, 0x00, 0x01, 0x00, /* Size. */
+        0x8f, 0xd6, /* Crc. */
+        0x3c, 0x6c
+    };
+    uint8_t response[] = {
+        0xff, 0xff, 0x00, 0x04,
+        0xff, 0xff, 0xff, 0xed, /* Error code. */
+        0x22, 0xba
+    };
+    uint8_t buf[256];
+
+    write_read_command_request(&request_header[0],
+                               &request_payload_crc[0],
+                               sizeof(request_payload_crc));
+    memset(&buf[0], 0x12, sizeof(buf));
+    write_fast_data_read(&buf[0], sizeof(buf));
+    mock_write_flash_async_write(0x04030201,
+                                 &buf[0],
+                                 sizeof(buf),
+                                 -19);
+    write_write_command_response(&response[0],
+                                 sizeof(response));
+
+    BTASSERT(ramapp_init(&ramapp, &flash) == 0);
+    BTASSERT(ramapp_process_packet(&ramapp) == 0);
+
+    return (0);
+}
+
 static int test_fast_write_two_rows(void)
 {
     struct ramapp_t ramapp;
@@ -620,6 +656,54 @@ static int test_fast_write_two_rows_bad_compare(void)
     return (0);
 }
 
+static int test_fast_write_two_rows_bad_async_write(void)
+{
+    struct ramapp_t ramapp;
+    struct flash_driver_t flash;
+    uint8_t request_header[] = { 0x00, 0x6a, 0x00, 0x0a };
+    uint8_t request_payload_crc[] = {
+        0x04, 0x03, 0x02, 0x01, /* Address. */
+        0x00, 0x00, 0x02, 0x00, /* Size. */
+        0x18, 0x87, /* Crc. */
+        0x6c, 0x18
+    };
+    uint8_t response[] = {
+        0xff, 0xff, 0x00, 0x04,
+        0xff, 0xff, 0xff, 0xee, /* Error code. */
+        0x12, 0xd9
+    };
+    uint8_t buf[256];
+
+    write_read_command_request(&request_header[0],
+                               &request_payload_crc[0],
+                               sizeof(request_payload_crc));
+    memset(&buf[0], 0x12, sizeof(buf));
+
+    /* First. */
+    write_fast_data_read(&buf[0], sizeof(buf));
+    mock_write_flash_async_write(0x04030201,
+                                 &buf[0],
+                                 sizeof(buf),
+                                 0);
+    mock_write_flash_async_wait(0);
+    write_cmp32(&buf[0], 0x04030201, sizeof(buf));
+
+    /* Second - fail. */
+    write_fast_data_read(&buf[0], sizeof(buf));
+    mock_write_flash_async_write(0x04030201 + sizeof(buf),
+                                 &buf[0],
+                                 sizeof(buf),
+                                 -18);
+
+    write_write_command_response(&response[0],
+                                 sizeof(response));
+
+    BTASSERT(ramapp_init(&ramapp, &flash) == 0);
+    BTASSERT(ramapp_process_packet(&ramapp) == 0);
+
+    return (0);
+}
+
 static int test_bad_command(void)
 {
     struct ramapp_t ramapp;
@@ -682,6 +766,10 @@ int main()
             test_fast_write_one_row_bad_compare,
             "test_fast_write_one_row_bad_compare"
         },
+        {
+            test_fast_write_one_row_bad_async_write,
+            "test_fast_write_one_row_bad_async_write"
+        },
         { test_fast_write_two_rows, "test_fast_write_two_rows" },
         {
             test_fast_write_two_rows_bad_crc,
@@ -690,6 +778,10 @@ int main()
         {
             test_fast_write_two_rows_bad_compare,
             "test_fast_write_two_rows_bad_compare"
+        },
+        {
+            test_fast_write_two_rows_bad_async_write,
+            "test_fast_write_two_rows_bad_async_write"
         },
         { test_bad_command, "test_bad_command" },
         { test_bad_request_crc, "test_bad_request_crc" },
