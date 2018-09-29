@@ -126,52 +126,91 @@ static int write_enter_serial_execution_mode(int mtap_sw_mtap_res,
 }
 
 static void write_xfer_data_32(uint32_t request,
-                               uint32_t response)
+                               uint32_t response,
+                               int res)
 {
     request = htonl(request);
 
     mock_write_icsp_soft_data_transfer((uint8_t *)&response,
                                        (uint8_t *)&request,
                                        32,
-                                       0);
+                                       res);
 }
 
-static void write_xfer_instruction(uint32_t instruction,
-                                   int res)
+static int write_xfer_instruction(uint32_t instruction,
+                                  int etap_control_res,
+                                  int xfer_data_32_res,
+                                  int etap_data_res,
+                                  int xfer_data_32_res_2,
+                                  int etap_control_res_2,
+                                  int xfer_data_32_res_3)
 {
     struct time_t time;
 
-    write_send_command(0x50, res);
+    write_send_command(0x50, etap_control_res);
 
-    if (res != 0) {
-        return;
+    if (etap_control_res != 0) {
+        return (-1);
     }
 
     time.seconds = 0;
     time.nanoseconds = 500000000;
     mock_write_time_get(&time, 0);
-    write_xfer_data_32(0x0032000, 0xfffffff);
+    write_xfer_data_32(0x0032000, 0xfffffff, xfer_data_32_res);
     mock_write_time_get(&time, 0);
 
-    write_send_command(0x90, 0);
-    write_xfer_data_32(bits_reverse_32(instruction), 0);
-    write_send_command(0x50, 0);
-    write_xfer_data_32(0x0030000, 0);
+    if (xfer_data_32_res != 0) {
+        return (-1);
+    }
+
+    write_send_command(0x90, etap_data_res);
+
+    if (etap_data_res != 0) {
+        return (-1);
+    }
+
+    write_xfer_data_32(bits_reverse_32(instruction), 0, xfer_data_32_res_2);
+
+    if (xfer_data_32_res_2 != 0) {
+        return (-1);
+    }
+
+    write_send_command(0x50, etap_control_res_2);
+
+    if (etap_control_res_2 != 0) {
+        return (-1);
+    }
+
+    write_xfer_data_32(0x0030000, 0, xfer_data_32_res_3);
+
+    return (xfer_data_32_res_3);
 }
 
-static void write_upload_ramapp(int res)
+static int write_upload_ramapp(int etap_control_res,
+                               int xfer_data_32_res,
+                               int etap_data_res,
+                               int xfer_data_32_res_2,
+                               int etap_control_res_2,
+                               int xfer_data_32_res_3)
 {
     size_t i;
+    int res;
 
     for (i = 0; i < membersof(ramapp_upload_instructions); i++) {
-        write_xfer_instruction(ramapp_upload_instructions[i], res);
+        res = write_xfer_instruction(ramapp_upload_instructions[i],
+                                     etap_control_res,
+                                     xfer_data_32_res,
+                                     etap_data_res,
+                                     xfer_data_32_res_2,
+                                     etap_control_res_2,
+                                     xfer_data_32_res_3);
 
         if (res != 0) {
-            return;
+            return (-1);
         }
     }
 
-    write_xfer_instruction(0, 0);
+    return (write_xfer_instruction(0, 0, 0, 0, 0, 0, 0));
 }
 
 static void write_read_command_request(uint8_t *header_p,
@@ -205,7 +244,12 @@ static void write_handle_connect(int enter_serial_execution_mode_mtap_sw_mtap_re
                                  int enter_serial_execution_mode_mtap_command_res_2,
                                  int enter_serial_execution_mode_mchp_de_assert_rst_res,
                                  int enter_serial_execution_mode_mtap_sw_etap_res_2,
-                                 int upload_ramapp_res,
+                                 int upload_ramapp_etap_control_res,
+                                 int upload_ramapp_xfer_data_32_res,
+                                 int upload_ramapp_etap_data_res,
+                                 int upload_ramapp_xfer_data_32_res_2,
+                                 int upload_ramapp_etap_control_res_2,
+                                 int upload_ramapp_xfer_data_32_res_3,
                                  int etap_fastdata_res)
 {
     int res;
@@ -231,9 +275,14 @@ static void write_handle_connect(int enter_serial_execution_mode_mtap_sw_mtap_re
         return;
     }
 
-    write_upload_ramapp(upload_ramapp_res);
+    res = write_upload_ramapp(upload_ramapp_etap_control_res,
+                              upload_ramapp_xfer_data_32_res,
+                              upload_ramapp_etap_data_res,
+                              upload_ramapp_xfer_data_32_res_2,
+                              upload_ramapp_etap_control_res_2,
+                              upload_ramapp_xfer_data_32_res_3);
 
-    if (upload_ramapp_res != 0) {
+    if (res != 0) {
         return;
     }
 
@@ -270,7 +319,24 @@ static int connect(struct programmer_t *programmer_p)
                                     sizeof(request_crc),
                                     &response[0],
                                     sizeof(response));
-    write_handle_connect(0, 0, 0, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    write_handle_connect(0,
+                         0,
+                         0,
+                         0xff,
+                         0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         0);
 
     BTASSERTI(programmer_process_packet(programmer_p), ==, 0);
 
@@ -530,12 +596,11 @@ static int test_connect_enter_serial_execution_mode_failure(void)
         int enter_serial_execution_mode_mtap_command_res_2;
         int enter_serial_execution_mode_mchp_de_assert_rst_res;
         int enter_serial_execution_mode_mtap_sw_etap_res_2;
-        int upload_ramapp_res;
         int etap_fastdata_res;
         uint8_t response[10];
     } datas[] = {
         {
-            -3, 0, 0, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            -3, 0, 0, 0xff, 0, 0, 0, 0, 0, 0, 0, 0,
             .response = {
                 0xff, 0xff, 0x00, 0x04,
                 0xff, 0xff, 0xd8, 0xf0, /* Error code -EENTERSERIALEXECUTIONMODE. */
@@ -543,7 +608,7 @@ static int test_connect_enter_serial_execution_mode_failure(void)
             }
         },
         {
-            0, -4, 0, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, -4, 0, 0xff, 0, 0, 0, 0, 0, 0, 0, 0,
             .response = {
                 0xff, 0xff, 0x00, 0x04,
                 0xff, 0xff, 0xd8, 0xf0, /* Error code -EENTERSERIALEXECUTIONMODE. */
@@ -551,7 +616,7 @@ static int test_connect_enter_serial_execution_mode_failure(void)
             }
         },
         {
-            0, 0, -5, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, -5, 0xff, 0, 0, 0, 0, 0, 0, 0, 0,
             .response = {
                 0xff, 0xff, 0x00, 0x04,
                 0xff, 0xff, 0xd8, 0xf0, /* Error code -EENTERSERIALEXECUTIONMODE. */
@@ -559,7 +624,7 @@ static int test_connect_enter_serial_execution_mode_failure(void)
             }
         },
         {
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             .response = {
                 0xff, 0xff, 0x00, 0x04,
                 0xff, 0xff, 0xd8, 0xf0, /* Error code -EENTERSERIALEXECUTIONMODE. */
@@ -567,7 +632,7 @@ static int test_connect_enter_serial_execution_mode_failure(void)
             }
         },
         {
-            0, 0, 0, 0xff, -7, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0xff, -7, 0, 0, 0, 0, 0, 0, 0,
             .response = {
                 0xff, 0xff, 0x00, 0x04,
                 0xff, 0xff, 0xd8, 0xf0, /* Error code -EENTERSERIALEXECUTIONMODE. */
@@ -575,7 +640,7 @@ static int test_connect_enter_serial_execution_mode_failure(void)
             }
         },
         {
-            0, 0, 0, 0xff, 0, -8, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0xff, 0, -8, 0, 0, 0, 0, 0, 0,
             .response = {
                 0xff, 0xff, 0x00, 0x04,
                 0xff, 0xff, 0xd8, 0xf0, /* Error code -EENTERSERIALEXECUTIONMODE. */
@@ -583,7 +648,7 @@ static int test_connect_enter_serial_execution_mode_failure(void)
             }
         },
         {
-            0, 0, 0, 0xff, 0, 0, -9, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0xff, 0, 0, -9, 0, 0, 0, 0, 0,
             .response = {
                 0xff, 0xff, 0x00, 0x04,
                 0xff, 0xff, 0xd8, 0xf0, /* Error code -EENTERSERIALEXECUTIONMODE. */
@@ -591,7 +656,7 @@ static int test_connect_enter_serial_execution_mode_failure(void)
             }
         },
         {
-            0, 0, 0, 0xff, 0, 0, 0, -10, 0, 0, 0, 0, 0,
+            0, 0, 0, 0xff, 0, 0, 0, -10, 0, 0, 0, 0,
             .response = {
                 0xff, 0xff, 0x00, 0x04,
                 0xff, 0xff, 0xd8, 0xf0, /* Error code -EENTERSERIALEXECUTIONMODE. */
@@ -599,7 +664,7 @@ static int test_connect_enter_serial_execution_mode_failure(void)
             }
         },
         {
-            0, 0, 0, 0xff, 0, 0, 0, 0, -11, 0, 0, 0, 0,
+            0, 0, 0, 0xff, 0, 0, 0, 0, -11, 0, 0, 0,
             .response = {
                 0xff, 0xff, 0x00, 0x04,
                 0xff, 0xff, 0xd8, 0xf0, /* Error code -EENTERSERIALEXECUTIONMODE. */
@@ -607,7 +672,7 @@ static int test_connect_enter_serial_execution_mode_failure(void)
             }
         },
         {
-            0, 0, 0, 0xff, 0, 0, 0, 0, 0, -12, 0, 0, 0,
+            0, 0, 0, 0xff, 0, 0, 0, 0, 0, -12, 0, 0,
             .response = {
                 0xff, 0xff, 0x00, 0x04,
                 0xff, 0xff, 0xd8, 0xf0, /* Error code -EENTERSERIALEXECUTIONMODE. */
@@ -615,7 +680,7 @@ static int test_connect_enter_serial_execution_mode_failure(void)
             }
         },
         {
-            0, 0, 0, 0xff, 0, 0, 0, 0, 0, 0, -13, 0, 0,
+            0, 0, 0, 0xff, 0, 0, 0, 0, 0, 0, -13, 0,
             .response = {
                 0xff, 0xff, 0x00, 0x04,
                 0xff, 0xff, 0xd8, 0xf0, /* Error code -EENTERSERIALEXECUTIONMODE. */
@@ -623,19 +688,11 @@ static int test_connect_enter_serial_execution_mode_failure(void)
             }
         },
         {
-            0, 0, 0, 0xff, 0, 0, 0, 0, 0, 0, 0, -14, 0,
+            0, 0, 0, 0xff, 0, 0, 0, 0, 0, 0, 0, -20,
             .response = {
                 0xff, 0xff, 0x00, 0x04,
-                0xff, 0xff, 0xd8, 0xef, /* Error code -ERAMAPPUPLOAD. */
-                0x9d, 0x89
-            }
-        },
-        {
-            0, 0, 0, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, -15,
-            .response = {
-                0xff, 0xff, 0x00, 0x04,
-                0xff, 0xff, 0xff, 0xf1, /* Error code -ERAMAPPUPLOAD. */
-                0xf1, 0x07
+                0xff, 0xff, 0xff, 0xec, /* Error code -20. */
+                0x32, 0x9b
             }
         }
     };
@@ -657,8 +714,113 @@ static int test_connect_enter_serial_execution_mode_failure(void)
             datas[i].enter_serial_execution_mode_mtap_command_res_2,
             datas[i].enter_serial_execution_mode_mchp_de_assert_rst_res,
             datas[i].enter_serial_execution_mode_mtap_sw_etap_res_2,
-            datas[i].upload_ramapp_res,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
             datas[i].etap_fastdata_res);
+        mock_write_chan_write(&datas[i].response[0],
+                              sizeof(datas[i].response),
+                              sizeof(datas[i].response));
+
+        BTASSERTI(programmer_init(&programmer), ==, 0);
+        BTASSERTI(programmer_process_packet(&programmer), ==, 0);
+    }
+
+    return (0);
+}
+
+static int test_connect_upload_ramapp_failure(void)
+{
+    struct programmer_t programmer;
+    int i;
+    uint8_t request_header[] = { 0x00, 0x65, 0x00, 0x00 };
+    uint8_t request_crc[] = { 0xf4, 0x5b };
+    struct data_t {
+        int upload_ramapp_etap_control_res;
+        int upload_ramapp_xfer_data_32_res;
+        int upload_ramapp_etap_data_res;
+        int upload_ramapp_xfer_data_32_res_2;
+        int upload_ramapp_etap_control_res_2;
+        int upload_ramapp_xfer_data_32_res_3;
+        uint8_t response[10];
+    } datas[] = {
+        {
+            -14, 0, 0, 0, 0, 0,
+            .response = {
+                0xff, 0xff, 0x00, 0x04,
+                0xff, 0xff, 0xd8, 0xef, /* Error code -ERAMAPPUPLOAD. */
+                0x9d, 0x89
+            }
+        },
+        {
+            0, -15, 0, 0, 0, 0,
+            .response = {
+                0xff, 0xff, 0x00, 0x04,
+                0xff, 0xff, 0xd8, 0xef, /* Error code -ERAMAPPUPLOAD. */
+                0x9d, 0x89
+            }
+        },
+        {
+            0, 0, -16, 0, 0, 0,
+            .response = {
+                0xff, 0xff, 0x00, 0x04,
+                0xff, 0xff, 0xd8, 0xef, /* Error code -ERAMAPPUPLOAD. */
+                0x9d, 0x89
+            }
+        },
+        {
+            0, 0, 0, -17, 0, 0,
+            .response = {
+                0xff, 0xff, 0x00, 0x04,
+                0xff, 0xff, 0xd8, 0xef, /* Error code -ERAMAPPUPLOAD. */
+                0x9d, 0x89
+            }
+        },
+        {
+            0, 0, 0, 0, -18, 0,
+            .response = {
+                0xff, 0xff, 0x00, 0x04,
+                0xff, 0xff, 0xd8, 0xef, /* Error code -ERAMAPPUPLOAD. */
+                0x9d, 0x89
+            }
+        },
+        {
+            0, 0, 0, 0, 0, -19,
+            .response = {
+                0xff, 0xff, 0x00, 0x04,
+                0xff, 0xff, 0xd8, 0xef, /* Error code -ERAMAPPUPLOAD. */
+                0x9d, 0x89
+            }
+        }
+    };
+
+    for (i = 0; i < membersof(datas); i++) {
+        write_read_command_request(&request_header[0],
+                                   sizeof(request_header),
+                                   &request_crc[0],
+                                   sizeof(request_crc));
+        write_handle_connect(
+            0,
+            0,
+            0,
+            0xff,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            datas[i].upload_ramapp_etap_control_res,
+            datas[i].upload_ramapp_xfer_data_32_res,
+            datas[i].upload_ramapp_etap_data_res,
+            datas[i].upload_ramapp_xfer_data_32_res_2,
+            datas[i].upload_ramapp_etap_control_res_2,
+            datas[i].upload_ramapp_xfer_data_32_res_3,
+            0);
         mock_write_chan_write(&datas[i].response[0],
                               sizeof(datas[i].response),
                               sizeof(datas[i].response));
@@ -1300,6 +1462,10 @@ int main()
         {
             test_connect_enter_serial_execution_mode_failure,
             "test_connect_enter_serial_execution_mode_failure"
+        },
+        {
+            test_connect_upload_ramapp_failure,
+            "test_connect_upload_ramapp_failure"
         },
         { test_disconnect, "test_disconnect" },
         { test_disconnect_not_connected, "test_disconnect_not_connected" },
