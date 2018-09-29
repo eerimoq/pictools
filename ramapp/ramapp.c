@@ -50,7 +50,7 @@
 /**
  * Faster than memcmp.
  */
-static int cmp32(uint32_t *b1_p, uint32_t address, size_t size)
+static int memcmp32(uint32_t *b1_p, uint32_t address, size_t size)
 {
     size_t i;
 
@@ -148,7 +148,7 @@ static ssize_t handle_write(struct ramapp_t *self_p,
     res = flash_write(self_p->flash_p, address, &buf_p[8], size);
 
     if (res == size) {
-        if (cmp8(&buf_p[8], address, size) == 0) {
+        if (memcmp8(&buf_p[8], address, size) == 0) {
             res = 0;
         } else {
             res = -EFLASHWRITE;
@@ -203,9 +203,9 @@ static ssize_t handle_fast_write(struct ramapp_t *self_p,
 
         /* Reading from flash at the same time as writing stalls the
            CPU until the write is complete. */
-        res = cmp32((uint32_t *)&buf[index ^ 1][0],
-                    address + i - FLASH_ROW_SIZE,
-                    FLASH_ROW_SIZE);
+        res = memcmp32((uint32_t *)&buf[index ^ 1][0],
+                       address + i - FLASH_ROW_SIZE,
+                       FLASH_ROW_SIZE);
 
         if (res != 0) {
             return (-EFLASHWRITE);
@@ -232,9 +232,9 @@ static ssize_t handle_fast_write(struct ramapp_t *self_p,
         return (res);
     }
 
-    res = cmp32((uint32_t *)&buf[index][0],
-                address + i - FLASH_ROW_SIZE,
-                FLASH_ROW_SIZE);
+    res = memcmp32((uint32_t *)&buf[index][0],
+                   address + i - FLASH_ROW_SIZE,
+                   FLASH_ROW_SIZE);
 
     if (res != 0) {
         return (-EFLASHWRITE);

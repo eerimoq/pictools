@@ -153,26 +153,26 @@ static void write_cmp32(uint8_t *buf_p, uint32_t address, size_t size)
     }
 }
 
-int cmp8(void *buf_p, uint32_t address, size_t size)
+int memcmp8(void *buf_p, uint32_t address, size_t size)
 {
     int res;
 
-    harness_mock_assert("cmp8(size)", &size, sizeof(size));
-    harness_mock_assert("cmp8(address)", &address, sizeof(address));
-    harness_mock_assert("cmp8(buf_p)", buf_p, size);
-    harness_mock_read("cmp8(): return (res)",
+    harness_mock_assert("memcmp8(size)", &size, sizeof(size));
+    harness_mock_assert("memcmp8(address)", &address, sizeof(address));
+    harness_mock_assert("memcmp8(buf_p)", buf_p, size);
+    harness_mock_read("memcmp8(): return (res)",
                       &res,
                       sizeof(res));
 
     return (res);
 }
 
-static void write_cmp8(void *buf_p, uint32_t address, size_t size, int res)
+static void write_memcmp8(void *buf_p, uint32_t address, size_t size, int res)
 {
-    harness_mock_write("cmp8(buf_p)", buf_p, size);
-    harness_mock_write("cmp8(address)", &address, sizeof(address));
-    harness_mock_write("cmp8(size)", &size, sizeof(size));
-    harness_mock_write("cmp8(): return (res)", &res, sizeof(res));
+    harness_mock_write("memcmp8(buf_p)", buf_p, size);
+    harness_mock_write("memcmp8(address)", &address, sizeof(address));
+    harness_mock_write("memcmp8(size)", &size, sizeof(size));
+    harness_mock_write("memcmp8(): return (res)", &res, sizeof(res));
 }
 
 static void write_fast_data_read(uint8_t *buf_p, size_t size)
@@ -339,7 +339,78 @@ static int test_write(void)
                            &data,
                            sizeof(data),
                            sizeof(data));
-    write_cmp8(&data, 0x04030201, sizeof(data), 0);
+    write_memcmp8(&data, 0x04030201, sizeof(data), 0);
+    write_write_command_response(&response[0],
+                                 sizeof(response));
+
+    BTASSERT(ramapp_init(&ramapp, &flash) == 0);
+    BTASSERT(ramapp_process_packet(&ramapp) == 0);
+
+    return (0);
+}
+
+static int test_write_failure(void)
+{
+    struct ramapp_t ramapp;
+    struct flash_driver_t flash;
+    uint8_t request_header[] = { 0x00, 0x04, 0x00, 0x09 };
+    uint8_t request_payload_crc[] = {
+        0x04, 0x03, 0x02, 0x01, /* Address. */
+        0x00, 0x00, 0x00, 0x01, /* Size. */
+        0xfe, /* Data. */
+        0x4c, 0xef
+    };
+    uint8_t response[] = {
+        0xff, 0xff, 0x00, 0x04,
+        0xff, 0xff, 0xff, 0xf0, /* Error code. */
+        0xe1, 0x26
+    };
+    uint8_t data;
+
+    write_read_command_request(&request_header[0],
+                               &request_payload_crc[0],
+                               sizeof(request_payload_crc));
+    data = 0xfe;
+    mock_write_flash_write(0x04030201,
+                           &data,
+                           sizeof(data),
+                           -16);
+    write_write_command_response(&response[0],
+                                 sizeof(response));
+
+    BTASSERT(ramapp_init(&ramapp, &flash) == 0);
+    BTASSERT(ramapp_process_packet(&ramapp) == 0);
+
+    return (0);
+}
+
+static int test_write_memcmp_failure(void)
+{
+    struct ramapp_t ramapp;
+    struct flash_driver_t flash;
+    uint8_t request_header[] = { 0x00, 0x04, 0x00, 0x09 };
+    uint8_t request_payload_crc[] = {
+        0x04, 0x03, 0x02, 0x01, /* Address. */
+        0x00, 0x00, 0x00, 0x01, /* Size. */
+        0xfe, /* Data. */
+        0x4c, 0xef
+    };
+    uint8_t response[] = {
+        0xff, 0xff, 0x00, 0x04,
+        0xff, 0xff, 0xfc, 0x10, /* Error code. */
+        0x49, 0x5b
+    };
+    uint8_t data;
+
+    write_read_command_request(&request_header[0],
+                               &request_payload_crc[0],
+                               sizeof(request_payload_crc));
+    data = 0xfe;
+    mock_write_flash_write(0x04030201,
+                           &data,
+                           sizeof(data),
+                           sizeof(data));
+    write_memcmp8(&data, 0x04030201, sizeof(data), 1);
     write_write_command_response(&response[0],
                                  sizeof(response));
 
@@ -604,6 +675,8 @@ int main()
         { test_erase, "test_erase" },
         { test_read, "test_read" },
         { test_write, "test_write" },
+        { test_write_failure, "test_write_failure" },
+        { test_write_memcmp_failure, "test_write_memcmp_failure" },
         { test_fast_write_one_row, "test_fast_write_one_row" },
         {
             test_fast_write_one_row_bad_compare,

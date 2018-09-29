@@ -63,7 +63,7 @@ static inline uint32_t load_flash_32(uint32_t address, size_t index)
     return (buf_p[index]);
 }
 
-static inline int cmp8(void *buf_p, uint32_t address, size_t size)
+static inline int memcmp8(void *buf_p, uint32_t address, size_t size)
 {
     return (memcmp(buf_p, (void *)(uintptr_t)address, size));
 }
@@ -74,7 +74,7 @@ extern uint32_t etap_fast_data_read(void);
 extern void etap_fast_data_write(uint32_t value);
 extern uint8_t load_flash_8(uint32_t address, size_t index);
 extern uint32_t load_flash_32(uint32_t address, size_t index);
-extern int cmp8(void *buf_p, uint32_t address, size_t size);
+extern int memcmp8(void *buf_p, uint32_t address, size_t size);
 
 #endif
 
