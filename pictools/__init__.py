@@ -691,9 +691,10 @@ def create_chunks(binfile):
     fast_chunks = []
     total = 0
 
-    for address, data in binfile.segments:
-        address = physical_flash_address(address)
-        size = len(data)
+    for segment in binfile.segments:
+        address = physical_flash_address(segment.address)
+        size = len(segment.data)
+        total += size
 
         if not (is_program_flash_range(address, size)
                 or is_boot_flash_configuration_bits_range(address, size)):
@@ -702,32 +703,16 @@ def create_chunks(binfile):
                     address,
                     size))
 
-        if (address % FAST_WRITE_SIZE) != 0:
-            offset = (FAST_WRITE_SIZE - (address % FAST_WRITE_SIZE))
+        fast_chunks_segment = []
 
-            if offset > size:
-                offset = size
+        for chunk in segment.chunks(FAST_WRITE_SIZE, FAST_WRITE_SIZE):
+            if len(chunk.data) < FAST_WRITE_SIZE:
+                chunks.append(chunk)
+            else:
+                fast_chunks_segment.append(chunk)
 
-            chunk = (address, data[:offset])
-            chunks.append(chunk)
-        else:
-            offset = 0
-
-        number_of_fast_chunks = ((size - offset) // FAST_WRITE_SIZE)
-        fast_chunk_size = (FAST_WRITE_SIZE * number_of_fast_chunks)
-
-        if fast_chunk_size > 0:
-            fast_chunk = (address + offset, data[offset:offset + fast_chunk_size])
-            fast_chunks.append(fast_chunk)
-
-        offset += fast_chunk_size
-        last_chunk_size = (size - offset)
-
-        if last_chunk_size > 0:
-            chunk = (address + offset, data[offset:])
-            chunks.append(chunk)
-
-        total += size
+        if len(fast_chunks_segment) > 0:
+            fast_chunks.append(fast_chunks_segment)
 
     return chunks, fast_chunks, total
 
@@ -776,20 +761,26 @@ def do_flash_write(args):
     with tqdm(total=total, unit=' bytes') as progress:
         # Chunks.
         for address, data in chunks:
-            header = struct.pack('>II', address, len(data))
+            header = struct.pack('>II',
+                                 physical_flash_address(address),
+                                 len(data))
             execute_command(serial_connection, COMMAND_TYPE_WRITE, header + data)
             progress.update(len(data))
 
         # Fast chunks.
-        for address, data in fast_chunks:
-            header = struct.pack('>IIH', address, len(data), crc_ccitt(data))
+        for chunks in fast_chunks:
+            data = b''.join([chunk.data for chunk in chunks])
+            header = struct.pack('>IIH',
+                                 physical_flash_address(chunks[0].address),
+                                 len(data),
+                                 crc_ccitt(data))
             send_command(serial_connection,
                          PROGRAMMER_COMMAND_TYPE_FAST_WRITE,
                          header)
-            serial_connection.write(data[:FAST_WRITE_SIZE])
+            serial_connection.write(chunks[0].data)
 
-            for offset in range(FAST_WRITE_SIZE, len(data), FAST_WRITE_SIZE):
-                serial_connection.write(data[offset:offset + FAST_WRITE_SIZE])
+            for chunk in chunks[1:]:
+                serial_connection.write(chunk.data)
                 receive_fast_write_ack(serial_connection)
                 progress.update(FAST_WRITE_SIZE)
 
